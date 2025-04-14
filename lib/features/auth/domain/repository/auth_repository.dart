@@ -14,4 +14,5 @@ abstract interface class AuthRepository {
     required String password,
   });
   Stream<User?> authStateChanges();
+  Future<Either<Failure, void>> signOut();
 }

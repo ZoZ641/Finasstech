@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_ce_flutter/adapters.dart';
+import 'features/auth/domain/usecases/user_sign_out.dart';
 import 'firebase_options.dart';
 
 final serviceLocator = GetIt.instance;
@@ -44,12 +45,14 @@ void _initAuth() {
     //Use cases
     ..registerFactory(() => UserSignUp(serviceLocator()))
     ..registerFactory(() => UserSingIn(serviceLocator()))
+    ..registerFactory(() => UserSignOut(serviceLocator()))
     //Bloc
     ..registerLazySingleton(
       () => AuthBloc(
         userSignUp: serviceLocator(),
         userSingIn: serviceLocator(),
         appUserCubit: serviceLocator(),
+        userSignOut: serviceLocator(),
       ),
     );
 }

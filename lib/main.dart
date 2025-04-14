@@ -12,6 +12,10 @@ import 'package:finasstech/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'core/common/widgets/loader.dart';
+import 'core/utils/show_snackbar.dart';
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initDependencies();
@@ -72,12 +76,36 @@ class _MyAppState extends State<MyApp> {
         builder: (context, state) {
           if (state) {
             return CurvedNavBar(
-              pages: const [
+              pages: [
                 Center(child: Text('Transactions')),
                 CreateBudgetPage(),
                 DashboardPage(),
                 AiInsightsPage(),
-                Center(child: Text('Settings')),
+                //ToDo: move this with it's imports to it's own file
+                Center(
+                  child: BlocConsumer<AuthBloc, AuthState>(
+                    listener: (context, state) {
+                      if (state is AuthFailure) {
+                        showSnackBar(
+                          context,
+                          'error',
+                          state.message,
+                          ContentType.failure,
+                        );
+                      }
+                    },
+                    builder: (context, state) {
+                      if (state is AuthLoading) {
+                        return const Loader();
+                      }
+                      return GestureDetector(
+                        onTap:
+                            () => context.read<AuthBloc>().add(AuthSignOut()),
+                        child: Text('Settings'),
+                      );
+                    },
+                  ),
+                ),
               ],
               onPageChanged: updatePage,
             );

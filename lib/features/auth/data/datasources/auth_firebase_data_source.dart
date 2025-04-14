@@ -20,7 +20,7 @@ abstract interface class AuthFirebaseSource {
   Stream<User?> idTokenChanges();
   // Future<String> signInWithGoogle();
   // Future<String> signInWithApple();
-  // Future<void> signOut();
+  Future<void> signOut();
 }
 
 class AuthFirebaseSourceImpl implements AuthFirebaseSource {
@@ -97,83 +97,13 @@ class AuthFirebaseSourceImpl implements AuthFirebaseSource {
   Stream<User?> idTokenChanges() {
     return firebaseAuth.idTokenChanges();
   }
-}
-
-/*
-import 'package:firebase_auth/firebase_auth.dart';
-
-import '../models/user_model.dart';
-
-abstract interface class AuthFirebaseSource {
-  Future<UserModel> signUpWithEmailPassword({
-    required String name,
-    required String companyName,
-    required String email,
-    required String password,
-  });
-  Future<UserModel> signInWithEmailPassword({
-    required String email,
-    required String password,
-  });
-  // Future<String> signInWithGoogle();
-  //
-  // Future<String> signInWithApple();
-  //
-  // Future<void> signOut();
-}
-
-*/
-/*Firebase implementation of the AuthFirebaseSource interface */ /*
-
-class AuthFirebaseSourceImpl implements AuthFirebaseSource {
-  final FirebaseAuth firebaseAuth;
-  const AuthFirebaseSourceImpl(this.firebaseAuth);
 
   @override
-  Future<String> signInWithEmailPassword({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signOut() {
     try {
-      final UserCredential userCredential = await firebaseAuth
-          .signInWithEmailAndPassword(email: email, password: password);
-
-      return userCredential.user!.uid;
+      return firebaseAuth.signOut();
     } catch (e) {
-      throw FirebaseAuthException(code: 'auth-error', message: e.toString());
-    }
-  }
-
-  */
-/* Calls Firebase's createUserWithEmailAndPassword().
-    Updates the user's display name.
-    Returns the user ID or throws an error.*/ /*
-
-
-  @override
-  Future<UserModel> signUpWithEmailPassword({
-    required String name,
-    required String companyName,
-    required String email,
-    required String password,
-  }) async {
-    try {
-      UserCredential userCredential = await firebaseAuth
-          .createUserWithEmailAndPassword(email: email, password: password);
-
-      //ToDo: hive here
-      // Store user data in Firestore
-      // await _firestore.collection('users').doc(userCredential.user!.uid).set({
-      //   'name': name,
-      //   'companyName': companyName,
-      //   'email': email,
-      //   'createdAt': FieldValue.serverTimestamp(),
-      // });
-
-      return UserModel.fromFirebaseUser(userCredential.user!.);
-    } catch (e) {
-      throw FirebaseAuthException(code: 'auth-error', message: e.toString());
+      throw FirebaseAuthException(code: 'error', message: e.toString());
     }
   }
 }
-*/

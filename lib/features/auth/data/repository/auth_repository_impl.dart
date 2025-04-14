@@ -70,4 +70,14 @@ class AuthRepositoryImpl implements AuthRepository {
       return User(firebaseUser.uid, firebaseUser.email ?? '');
     });
   }
+
+  @override
+  Future<Either<Failure, void>> signOut() async {
+    try {
+      await firebaseSource.signOut();
+      return const Right(null);
+    } catch (e) {
+      return Left(Failure('Sign out failed: ${e.toString()}'));
+    }
+  }
 }
