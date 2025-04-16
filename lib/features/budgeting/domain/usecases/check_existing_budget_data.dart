@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/error/failures.dart';
+import '../../../../core/usecase/noparams.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../repository/budget_repository.dart';
 
@@ -14,5 +15,3 @@ class CheckExistingBudgetData implements UseCase<bool, NoParams> {
     return await budgetRepository.hasExistingBudgetData();
   }
 }
-
-class NoParams {}

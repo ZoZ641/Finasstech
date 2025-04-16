@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/error/failures.dart';
+import '../../../../core/usecase/noparams.dart';
 import '../../../../core/usecase/usecase.dart';
 import '../entities/budget.dart';
 import '../repository/budget_repository.dart';
@@ -15,5 +16,3 @@ class CreateBudgetWithProphet implements UseCase<Budget, NoParams> {
     return await budgetRepository.createBudgetWithProphetForecast();
   }
 }
-
-class NoParams {}
