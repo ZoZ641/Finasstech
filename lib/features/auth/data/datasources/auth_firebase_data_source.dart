@@ -48,6 +48,10 @@ class AuthFirebaseSourceImpl implements AuthFirebaseSource {
         email: firebaseUser.email ?? '',
       );
 
+      //Todo: this part of the code isn't working correctly
+      final box = await Hive.openBox<UserModel>('users');
+      await box.put(userModel.uid, userModel);
+
       return userModel;
     } on FirebaseAuthException {
       // ✅ Rethrow Firebase errors with their original message and code

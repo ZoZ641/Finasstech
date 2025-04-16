@@ -3,10 +3,15 @@
 // Check in to version control
 
 import 'package:hive_ce/hive.dart';
+import 'package:finasstech/core/common/entities/user.dart';
+import 'package:finasstech/features/budgeting/domain/entities/budget.dart';
+import 'package:finasstech/features/budgeting/domain/entities/budget_category.dart';
 import 'package:finasstech/hive/hive_adapters.dart';
 
 extension HiveRegistrar on HiveInterface {
   void registerAdapters() {
+    registerAdapter(BudgetAdapter());
+    registerAdapter(BudgetCategoryAdapter());
     registerAdapter(UserAdapter());
   }
 }
