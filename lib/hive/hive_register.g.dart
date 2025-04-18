@@ -10,8 +10,8 @@ import 'package:finasstech/hive/hive_adapters.dart';
 
 extension HiveRegistrar on HiveInterface {
   void registerAdapters() {
-    registerAdapter(BudgetAdapter());
-    registerAdapter(BudgetCategoryAdapter());
+    registerAdapter(BudgetModelAdapter());
+    registerAdapter(BudgetCategoryModelAdapter());
     registerAdapter(UserAdapter());
   }
 }
