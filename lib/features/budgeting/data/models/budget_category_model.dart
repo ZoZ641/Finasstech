@@ -1,13 +1,37 @@
+import 'package:hive_ce/hive.dart';
 import '../../domain/entities/budget_category.dart';
 
+@HiveType(typeId: 3)
 class BudgetCategoryModel extends BudgetCategory {
+  @HiveField(0)
+  final String name;
+
+  @HiveField(1)
+  final double percentage;
+
+  @HiveField(2)
+  final double amount;
+
+  @HiveField(3)
+  final double minRecommendedPercentage;
+
+  @HiveField(4)
+  final double maxRecommendedPercentage;
+
   BudgetCategoryModel({
-    required super.name,
-    required super.percentage,
-    required super.amount,
-    required super.minRecommendedPercentage,
-    required super.maxRecommendedPercentage,
-  });
+    required this.name,
+    required this.percentage,
+    required this.amount,
+    required this.minRecommendedPercentage,
+    required this.maxRecommendedPercentage,
+  }) : super(
+         name: name,
+         percentage: percentage,
+         amount: amount,
+         minRecommendedPercentage: minRecommendedPercentage,
+         maxRecommendedPercentage: maxRecommendedPercentage,
+       );
+
   factory BudgetCategoryModel.fromMap(Map<String, dynamic> map) {
     return BudgetCategoryModel(
       name: map['name'],
@@ -28,24 +52,6 @@ class BudgetCategoryModel extends BudgetCategory {
       'minRecommendedPercentage': minRecommendedPercentage,
       'maxRecommendedPercentage': maxRecommendedPercentage,
     };
-  }
-
-  BudgetCategoryModel copyWith({
-    String? name,
-    double? percentage,
-    double? amount,
-    double? minRecommendedPercentage,
-    double? maxRecommendedPercentage,
-  }) {
-    return BudgetCategoryModel(
-      name: name ?? this.name,
-      percentage: percentage ?? this.percentage,
-      amount: amount ?? this.amount,
-      minRecommendedPercentage:
-          minRecommendedPercentage ?? this.minRecommendedPercentage,
-      maxRecommendedPercentage:
-          maxRecommendedPercentage ?? this.maxRecommendedPercentage,
-    );
   }
 
   factory BudgetCategoryModel.fromEntity(BudgetCategory entity) {

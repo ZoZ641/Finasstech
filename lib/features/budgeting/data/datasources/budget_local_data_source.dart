@@ -1,6 +1,7 @@
 import 'package:finasstech/core/error/exceptions.dart';
 import 'package:hive_ce/hive.dart';
 
+import '../../domain/entities/budget.dart';
 import '../models/budget_category_model.dart';
 import '../models/budget_model.dart';
 
@@ -28,7 +29,7 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   @override
   Future<bool> hasExistingBudgetData() async {
     try {
-      return transactionsBox.isNotEmpty;
+      return budgetBox.isNotEmpty;
     } catch (_) {
       return false;
     }

@@ -1,34 +1,49 @@
+import 'package:hive_ce/hive.dart';
 import '../../domain/entities/budget.dart';
-import '../../domain/entities/budget_category.dart';
+import 'budget_category_model.dart';
 
-class BudgetModel extends Budget {
+@HiveType(typeId: 2)
+class BudgetModel extends Budget with HiveObjectMixin {
+  @HiveField(0)
+  final String id;
+
+  @HiveField(1)
+  final double forecastedSales;
+
+  @HiveField(2)
+  final Map<String, BudgetCategoryModel> categories;
+
+  @HiveField(3)
+  final DateTime createdAt;
+
+  @HiveField(4)
+  final DateTime updatedAt;
+
   BudgetModel({
-    required super.id,
-    //required String userId,
-    required super.forecastedSales,
-    required super.categories,
-    required super.createdAt,
-    required super.updatedAt,
-  });
+    required this.id,
+    required this.forecastedSales,
+    required this.categories,
+    required this.createdAt,
+    required this.updatedAt,
+  }) : super(
+         id: id,
+         forecastedSales: forecastedSales,
+         categories: categories,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+       );
 
   factory BudgetModel.fromMap(Map<String, dynamic> map) {
-    Map<String, BudgetCategory> categories = {};
-
-    if (map['categories'] != null) {
-      (map['categories'] as Map<String, dynamic>).forEach((key, value) {
-        categories[key] = BudgetCategory(
-          name: value['name'],
-          percentage: value['percentage'],
-          amount: value['amount'],
-          minRecommendedPercentage: value['minRecommendedPercentage'],
-          maxRecommendedPercentage: value['maxRecommendedPercentage'],
-        );
-      });
-    }
+    final cats = (map['categories'] as Map<String, dynamic>?) ?? {};
+    final categories = cats.map(
+      (key, value) => MapEntry(
+        key,
+        BudgetCategoryModel.fromMap(Map<String, dynamic>.from(value)),
+      ),
+    );
 
     return BudgetModel(
       id: map['id'] ?? '',
-      //userId: map['userId'] ?? '',
       forecastedSales: map['forecastedSales']?.toDouble() ?? 0.0,
       categories: categories,
       createdAt: DateTime.parse(
@@ -41,42 +56,34 @@ class BudgetModel extends Budget {
   }
 
   Map<String, dynamic> toMap() {
-    Map<String, dynamic> categoriesMap = {};
-    categories.forEach((key, value) {
-      categoriesMap[key] = {
-        'name': value.name,
-        'percentage': value.percentage,
-        'amount': value.amount,
-        'minRecommendedPercentage': value.minRecommendedPercentage,
-        'maxRecommendedPercentage': value.maxRecommendedPercentage,
-      };
-    });
+    final catMap = categories.map((key, value) => MapEntry(key, value.toMap()));
 
     return {
       'id': id,
-      //'userId': userId,
       'forecastedSales': forecastedSales,
-      'categories': categoriesMap,
+      'categories': catMap,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
   }
 
-  BudgetModel copyWith({
-    String? id,
-    String? userId,
-    double? forecastedSales,
-    Map<String, BudgetCategory>? categories,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
+  factory BudgetModel.fromEntity(Budget entity) {
     return BudgetModel(
-      id: id ?? this.id,
-      //userId: userId ?? this.userId,
-      forecastedSales: forecastedSales ?? this.forecastedSales,
-      categories: categories ?? this.categories,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      id: entity.id,
+      forecastedSales: entity.forecastedSales,
+      categories: entity.categories.map(
+        (key, value) => MapEntry(key, BudgetCategoryModel.fromEntity(value)),
+      ),
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
     );
   }
+
+  Budget toEntity() => Budget(
+    id: id,
+    forecastedSales: forecastedSales,
+    categories: categories,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 }

@@ -1,9 +1,10 @@
 import 'package:finasstech/core/error/failures.dart';
-import 'package:finasstech/features/budgeting/domain/entities/budget.dart';
-import 'package:finasstech/features/budgeting/domain/entities/budget_category.dart';
+import 'package:finasstech/features/budgeting/data/models/budget_model.dart';
 import 'package:finasstech/features/budgeting/domain/repository/budget_repository.dart';
 import 'package:fpdart/src/either.dart';
 
+import '../../domain/entities/budget.dart';
+import '../../domain/entities/budget_category.dart';
 import '../datasources/budget_local_data_source.dart';
 import '../models/budget_category_model.dart';
 
@@ -23,7 +24,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
   }
 
   @override
-  Future<Either<Failure, Budget>> createInitialBudget({
+  Future<Either<Failure, BudgetModel>> createInitialBudget({
     required double lastYearSales,
   }) async {
     try {
@@ -37,7 +38,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
   }
 
   @override
-  Future<Either<Failure, Budget>> createBudgetWithProphetForecast() async {
+  Future<Either<Failure, BudgetModel>> createBudgetWithProphetForecast() async {
     try {
       final budget = await hiveDataSource.createBudgetWithProphetForecast();
       return Right(budget);
@@ -47,7 +48,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
   }
 
   @override
-  Future<Either<Failure, Budget>> updateBudgetCategories({
+  Future<Either<Failure, BudgetModel>> updateBudgetCategories({
     required String budgetId,
     required Map<String, BudgetCategory> categories,
   }) async {
@@ -68,7 +69,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
   }
 
   @override
-  Future<Either<Failure, Budget?>> getLatestBudget() async {
+  Future<Either<Failure, BudgetModel?>> getLatestBudget() async {
     try {
       final budget = await hiveDataSource.getLatestBudget();
       return Right(budget);
