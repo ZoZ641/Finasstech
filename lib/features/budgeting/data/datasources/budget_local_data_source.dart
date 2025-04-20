@@ -1,7 +1,8 @@
+import 'dart:ffi';
+
 import 'package:finasstech/core/error/exceptions.dart';
 import 'package:hive_ce/hive.dart';
 
-import '../../domain/entities/budget.dart';
 import '../models/budget_category_model.dart';
 import '../models/budget_model.dart';
 
@@ -14,6 +15,7 @@ abstract interface class BudgetLocalDataSource {
     required Map<String, BudgetCategoryModel> categories,
   });
   Future<BudgetModel?> getLatestBudget();
+  Future<void> calculateBudgetUsageFromExpenses();
   Future<List<Map<String, dynamic>>> getTransactionsHistoryForProphet();
 }
 
@@ -43,6 +45,8 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
       final forecastedSales = lastYearSales * 1.2;
       final categories = _createDefaultBudgetCategories(forecastedSales);
       final budget = BudgetModel(
+        //Todo change id to uuid
+        // id: Uuid().v4(),
         id: 'budget_${DateTime.now().millisecondsSinceEpoch}',
         forecastedSales: forecastedSales,
         categories: categories,
@@ -137,6 +141,40 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
       );
     }
   }
+
+  @override
+  Future<void> calculateBudgetUsageFromExpenses() async {
+    if (budgetBox.isEmpty) return;
+    final budget = budgetBox.getAt(0)!;
+
+    final Map<String, double> usageMap = {};
+
+    for (final expense in transactionsBox.values) {
+      if (!usageMap.containsKey(expense.category)) {
+        usageMap[expense.category] = 0;
+      }
+      usageMap[expense.category] = usageMap[expense.category]! + expense.amount;
+    }
+
+    final updatedCategories = {
+      for (final entry in budget.categories.entries)
+        entry.key: BudgetCategoryModel(
+          name: entry.value.name,
+          percentage: entry.value.percentage,
+          amount: entry.value.amount,
+          usage: usageMap[entry.key] ?? 0.0,
+          minRecommendedPercentage: entry.value.minRecommendedPercentage,
+          maxRecommendedPercentage: entry.value.maxRecommendedPercentage,
+        ),
+    };
+
+    final updatedBudget = budget.copyWith(
+      categories: updatedCategories,
+      updatedAt: DateTime.now(),
+    );
+
+    await budgetBox.putAt(0, updatedBudget);
+  }
 }
 
 // Helper method to create default budget categories
@@ -147,6 +185,7 @@ Map<String, BudgetCategoryModel> _createDefaultBudgetCategories(
     'salaries': BudgetCategoryModel(
       name: 'Salaries',
       percentage: 30.0, // Default percentage
+      usage: 0,
       amount: forecastedSales * 0.3, // 30% of forecasted sales
       minRecommendedPercentage: 20.0,
       maxRecommendedPercentage: 50.0,
@@ -154,6 +193,7 @@ Map<String, BudgetCategoryModel> _createDefaultBudgetCategories(
     'stock': BudgetCategoryModel(
       name: 'Stock',
       percentage: 40.0,
+      usage: 0,
       amount: forecastedSales * 0.4,
       minRecommendedPercentage: 30.0,
       maxRecommendedPercentage: 70.0,
@@ -161,6 +201,7 @@ Map<String, BudgetCategoryModel> _createDefaultBudgetCategories(
     'advertisement': BudgetCategoryModel(
       name: 'Advertisement',
       percentage: 5.0,
+      usage: 0,
       amount: forecastedSales * 0.05,
       minRecommendedPercentage: 2.0,
       maxRecommendedPercentage: 10.0,
@@ -168,6 +209,7 @@ Map<String, BudgetCategoryModel> _createDefaultBudgetCategories(
     'rent': BudgetCategoryModel(
       name: 'Rent',
       percentage: 8.0,
+      usage: 0,
       amount: forecastedSales * 0.08,
       minRecommendedPercentage: 2.0,
       maxRecommendedPercentage: 15.0,
@@ -175,6 +217,7 @@ Map<String, BudgetCategoryModel> _createDefaultBudgetCategories(
     'insurance': BudgetCategoryModel(
       name: 'Insurance',
       percentage: 3.0,
+      usage: 0,
       amount: forecastedSales * 0.03,
       minRecommendedPercentage: 1.0,
       maxRecommendedPercentage: 5.0,
@@ -182,6 +225,7 @@ Map<String, BudgetCategoryModel> _createDefaultBudgetCategories(
     'electricity': BudgetCategoryModel(
       name: 'Electricity',
       percentage: 2.0,
+      usage: 0,
       amount: forecastedSales * 0.02,
       minRecommendedPercentage: 1.0,
       maxRecommendedPercentage: 5.0,
@@ -189,6 +233,7 @@ Map<String, BudgetCategoryModel> _createDefaultBudgetCategories(
     'water': BudgetCategoryModel(
       name: 'Water',
       percentage: 1.0,
+      usage: 0,
       amount: forecastedSales * 0.01,
       minRecommendedPercentage: 0.5,
       maxRecommendedPercentage: 2.0,
@@ -196,6 +241,7 @@ Map<String, BudgetCategoryModel> _createDefaultBudgetCategories(
     'equipment': BudgetCategoryModel(
       name: 'Equipment',
       percentage: 7.0,
+      usage: 0,
       amount: forecastedSales * 0.07,
       minRecommendedPercentage: 2.0,
       maxRecommendedPercentage: 15.0,
@@ -203,6 +249,7 @@ Map<String, BudgetCategoryModel> _createDefaultBudgetCategories(
     'maintenance': BudgetCategoryModel(
       name: 'Maintenance',
       percentage: 4.0,
+      usage: 0,
       amount: forecastedSales * 0.04,
       minRecommendedPercentage: 1.0,
       maxRecommendedPercentage: 10.0,

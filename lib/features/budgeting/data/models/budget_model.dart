@@ -2,21 +2,15 @@ import 'package:hive_ce/hive.dart';
 import '../../domain/entities/budget.dart';
 import 'budget_category_model.dart';
 
-@HiveType(typeId: 2)
 class BudgetModel extends Budget with HiveObjectMixin {
-  @HiveField(0)
   final String id;
 
-  @HiveField(1)
   final double forecastedSales;
 
-  @HiveField(2)
   final Map<String, BudgetCategoryModel> categories;
 
-  @HiveField(3)
   final DateTime createdAt;
 
-  @HiveField(4)
   final DateTime updatedAt;
 
   BudgetModel({
@@ -86,4 +80,20 @@ class BudgetModel extends Budget with HiveObjectMixin {
     createdAt: createdAt,
     updatedAt: updatedAt,
   );
+
+  BudgetModel copyWith({
+    String? id,
+    double? forecastedSales,
+    Map<String, BudgetCategoryModel>? categories,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return BudgetModel(
+      id: id ?? this.id,
+      forecastedSales: forecastedSales ?? this.forecastedSales,
+      categories: categories ?? this.categories,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

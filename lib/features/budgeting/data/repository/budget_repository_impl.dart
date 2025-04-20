@@ -9,6 +9,7 @@ import '../datasources/budget_local_data_source.dart';
 import '../models/budget_category_model.dart';
 
 class BudgetRepositoryImpl implements BudgetRepository {
+  //todo: rename hiveDataSource to localDataSource
   final BudgetLocalDataSource hiveDataSource;
 
   const BudgetRepositoryImpl(this.hiveDataSource);
@@ -78,33 +79,15 @@ class BudgetRepositoryImpl implements BudgetRepository {
     }
   }
 
-  //todo fix this method after creating expenses feature
   @override
-  Future<Either<Failure, Map<String, double>>> calculateBudgetUsage({
+  Future<Either<Failure, void>> calculateBudgetUsage({
     required Budget budget,
   }) async {
     try {
-      final transactions =
-          await hiveDataSource.getTransactionsHistoryForProphet();
-
-      Map<String, double> usageByCategory = {
-        for (var key in budget.categories.keys) key: 0.0,
-      };
-
-      for (var transaction in transactions) {
-        final category = transaction['category'] as String?;
-        final amount = transaction['amount'] as double?;
-
-        if (category != null &&
-            amount != null &&
-            usageByCategory.containsKey(category)) {
-          usageByCategory[category] = (usageByCategory[category] ?? 0) + amount;
-        }
-      }
-
-      return Right(usageByCategory);
+      await hiveDataSource.calculateBudgetUsageFromExpenses();
+      return right(null);
     } catch (e) {
-      return Left(Failure(e.toString()));
+      return left(Failure('Failed to calculate usage: $e'));
     }
   }
 }

@@ -93,7 +93,7 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
           context.read<BudgetBloc>().add(
             CalculateBudgetUsageEvent(budget: state.budget),
           );
-        } else if (state is BudgetUsageCalculated) {
+        } /*else if (state is BudgetUsageCalculated) {
           // Only navigate to dashboard after usage is calculated
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
@@ -104,7 +104,7 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
                   ),
             ),
           );
-        }
+        }*/
       },
       builder: (context, state) {
         print("Current state: $state"); // Add this for debugging
@@ -151,14 +151,17 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
               decoration: const InputDecoration(
                 labelText: 'Last Year Average Sales',
                 border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.attach_money),
+                prefixIcon: Icon(Icons.currency_pound),
               ),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
                 final salesText =
-                    _lastYearSalesController.text.replaceAll(',', '').trim();
+                    _lastYearSalesController.text
+                        .replaceAll(',', '')
+                        .replaceAll('£', '')
+                        .trim();
                 if (salesText.isEmpty) {
                   showSnackBar(
                     context,
@@ -238,6 +241,7 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
                           categories[categoryKey] = BudgetCategory(
                             name: category.name,
                             percentage: 0,
+                            usage: 0,
                             amount: 0,
                             minRecommendedPercentage:
                                 category.minRecommendedPercentage,
@@ -251,6 +255,7 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
                             amount:
                                 existingBudget!.forecastedSales *
                                 (newPercentage / 100),
+                            usage: 0,
                             minRecommendedPercentage:
                                 category.minRecommendedPercentage,
                             maxRecommendedPercentage:
@@ -267,6 +272,7 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
                             name: category.name,
                             percentage: 0,
                             amount: 0,
+                            usage: 0,
                             minRecommendedPercentage:
                                 category.minRecommendedPercentage,
                             maxRecommendedPercentage:
@@ -280,6 +286,7 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
                             name: category.name,
                             percentage: newPercentage,
                             amount: newAmount,
+                            usage: 0,
                             minRecommendedPercentage:
                                 category.minRecommendedPercentage,
                             maxRecommendedPercentage:

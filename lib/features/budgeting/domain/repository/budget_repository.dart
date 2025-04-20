@@ -25,7 +25,5 @@ abstract interface class BudgetRepository {
   Future<Either<Failure, Budget?>> getLatestBudget();
 
   /// Calculate how much of the budget is used in each category.
-  Future<Either<Failure, Map<String, double>>> calculateBudgetUsage({
-    required Budget budget,
-  });
+  Future<Either<Failure, void>> calculateBudgetUsage({required Budget budget});
 }

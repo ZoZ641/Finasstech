@@ -13,11 +13,11 @@ final class CreateInitialBudgetEvent extends BudgetEvent {
   CreateInitialBudgetEvent({required this.lastYearSales});
 }
 
-class CreateBudgetWithProphetEvent extends BudgetEvent {
+final class CreateBudgetWithProphetEvent extends BudgetEvent {
   CreateBudgetWithProphetEvent();
 }
 
-class UpdateBudgetCategoriesEvent extends BudgetEvent {
+final class UpdateBudgetCategoriesEvent extends BudgetEvent {
   final String budgetId;
   final Map<String, BudgetCategory> categories;
 

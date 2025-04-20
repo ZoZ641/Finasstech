@@ -32,15 +32,16 @@ class BudgetDashboard extends StatelessWidget {
                   return const SizedBox.shrink();
                 }
 
-                final spent = usage![categoryKey] ?? 0.0;
+                final spent =
+                    usage![categoryKey]! < 0 ? usage![categoryKey]! * -1 : 0.0;
                 final remainingAmount = category.amount - spent;
-                final usagePercentage =
-                    category.amount > 0
-                        ? (spent / category.amount).clamp(0.0, 2.0)
-                        : 0.0;
+                final usagePercentage = spent / category.amount;
 
                 // Determine status color
-                Color statusColor = Colors.green;
+                Color statusColor =
+                    category.usage > category.amount
+                        ? Colors.red
+                        : Colors.green;
                 if (usagePercentage > 0.85 && usagePercentage <= 1.0) {
                   statusColor = Colors.orange; // Approaching limit
                 } else if (usagePercentage > 1.0) {

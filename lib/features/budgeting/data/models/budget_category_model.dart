@@ -1,33 +1,31 @@
 import 'package:hive_ce/hive.dart';
 import '../../domain/entities/budget_category.dart';
 
-@HiveType(typeId: 3)
-class BudgetCategoryModel extends BudgetCategory {
-  @HiveField(0)
+class BudgetCategoryModel extends BudgetCategory with HiveObjectMixin {
   final String name;
 
-  @HiveField(1)
   final double percentage;
 
-  @HiveField(2)
   final double amount;
 
-  @HiveField(3)
+  final double usage;
+
   final double minRecommendedPercentage;
 
-  @HiveField(4)
   final double maxRecommendedPercentage;
 
   BudgetCategoryModel({
     required this.name,
     required this.percentage,
     required this.amount,
+    required this.usage,
     required this.minRecommendedPercentage,
     required this.maxRecommendedPercentage,
   }) : super(
          name: name,
          percentage: percentage,
          amount: amount,
+         usage: usage,
          minRecommendedPercentage: minRecommendedPercentage,
          maxRecommendedPercentage: maxRecommendedPercentage,
        );
@@ -37,6 +35,7 @@ class BudgetCategoryModel extends BudgetCategory {
       name: map['name'],
       percentage: map['percentage']?.toDouble() ?? 0.0,
       amount: map['amount']?.toDouble() ?? 0.0,
+      usage: map['usage']?.toDouble() ?? 0.0,
       minRecommendedPercentage:
           map['minRecommendedPercentage']?.toDouble() ?? 0.0,
       maxRecommendedPercentage:
@@ -49,6 +48,7 @@ class BudgetCategoryModel extends BudgetCategory {
       'name': name,
       'percentage': percentage,
       'amount': amount,
+      'usage': usage,
       'minRecommendedPercentage': minRecommendedPercentage,
       'maxRecommendedPercentage': maxRecommendedPercentage,
     };
@@ -59,6 +59,7 @@ class BudgetCategoryModel extends BudgetCategory {
       name: entity.name,
       percentage: entity.percentage,
       amount: entity.amount,
+      usage: entity.usage,
       minRecommendedPercentage: entity.minRecommendedPercentage,
       maxRecommendedPercentage: entity.maxRecommendedPercentage,
     );

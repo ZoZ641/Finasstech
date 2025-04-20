@@ -23,6 +23,8 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
   final GetLatestBudget getLatestBudget;
   final CalculateBudgetUsage calculateBudgetUsage;
 
+  Budget? _latestBudget;
+
   BudgetBloc({
     required this.checkExistingBudgetData,
     required this.createInitialBudget,
@@ -38,6 +40,8 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     on<GetLatestBudgetEvent>(_onGetLatestBudget);
     on<CalculateBudgetUsageEvent>(_onCalculateBudgetUsage);
   }
+
+  Budget? get budget => _latestBudget;
 
   void _onCheckForExistingBudgetData(
     CheckForExistingBudgetData event,
@@ -64,11 +68,10 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     final result = await createInitialBudget(event.lastYearSales);
 
     emit(
-      result.fold(
-        (failure) => BudgetError(message: failure.message),
-
-        (budget) => BudgetCreatedNeedsCategorization(budget),
-      ),
+      result.fold((failure) => BudgetError(message: failure.message), (budget) {
+        _latestBudget = budget;
+        return BudgetCreatedNeedsCategorization(budget);
+      }),
     );
   }
 
@@ -81,10 +84,10 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     final result = await createBudgetWithProphet(NoParams());
 
     emit(
-      result.fold(
-        (failure) => BudgetError(message: failure.message),
-        (budget) => BudgetCreated(budget),
-      ),
+      result.fold((failure) => BudgetError(message: failure.message), (budget) {
+        _latestBudget = budget;
+        return BudgetCreated(budget);
+      }),
     );
   }
 
@@ -102,10 +105,10 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     );
 
     emit(
-      result.fold(
-        (failure) => BudgetError(message: failure.message),
-        (budget) => BudgetLoaded(budget),
-      ),
+      result.fold((failure) => BudgetError(message: failure.message), (budget) {
+        _latestBudget = budget;
+        return BudgetLoaded(budget);
+      }),
     );
   }
 
@@ -118,13 +121,12 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     final result = await getLatestBudget(NoParams());
 
     emit(
-      result.fold(
-        (failure) => BudgetError(message: failure.message),
-        (budget) =>
-            budget != null
-                ? BudgetLoaded(budget)
-                : const BudgetError(message: 'No budget found.'),
-      ),
+      result.fold((failure) => BudgetError(message: failure.message), (budget) {
+        _latestBudget = budget;
+        return budget != null
+            ? BudgetLoaded(budget)
+            : const BudgetError(message: 'No budget found.');
+      }),
     );
   }
 
@@ -139,9 +141,11 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     emit(
       result.fold(
         (failure) => BudgetError(message: failure.message),
-        (usageData) => BudgetUsageCalculated(
+        (_) => BudgetUsageCalculated(
           budget: event.budget,
-          usageByCategory: usageData,
+          usageByCategory: event.budget.categories.map(
+            (k, v) => MapEntry(k, v.usage),
+          ),
         ),
       ),
     );
