@@ -1,7 +1,14 @@
+import 'package:hive_ce/hive.dart';
+
 import '../../../../core/common/entities/user.dart';
 
-class UserModel extends User {
-  UserModel({required String uid, required String email}) : super(uid, email);
+class UserModel extends User with HiveObjectMixin {
+  final String uid;
+
+  final String email;
+
+  UserModel({required this.uid, required this.email})
+    : super(uid: uid, email: email);
 
   // Create UserModel from Firebase Auth user (only email + uid)
   factory UserModel.fromFirebaseUser(User firebaseUser) {

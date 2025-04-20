@@ -19,6 +19,8 @@ import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 
 import 'features/budgeting/domain/entities/budget.dart';
 import 'features/budgeting/presentation/pages/budget_dashboard.dart';
+import 'features/expenses/presentation/bloc/expense_bloc.dart';
+import 'features/expenses/presentation/pages/expense_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +31,7 @@ void main() async {
         BlocProvider(create: (_) => serviceLocator<AppUserCubit>()),
         BlocProvider(create: (_) => serviceLocator<AuthBloc>()),
         BlocProvider(create: (_) => serviceLocator<BudgetBloc>()),
+        BlocProvider(create: (_) => serviceLocator<ExpenseBloc>()),
       ],
       child: DevicePreview(enabled: false, builder: (context) => const MyApp()),
     ),
@@ -79,7 +82,7 @@ class _MyAppState extends State<MyApp> {
           if (state) {
             return CurvedNavBar(
               pages: [
-                const Center(child: Text('Transactions')),
+                const ExpensePage(),
 
                 //ToDo: fix the sates in the budget feature
                 // Budget page with BlocConsumer

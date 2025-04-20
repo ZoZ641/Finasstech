@@ -15,7 +15,7 @@ class AppUserCubit extends Cubit<AppUserState> {
       } else {
         emit(
           AppUserAuthenticated(
-            User(firebaseUser.uid, firebaseUser.email ?? ''),
+            User(uid: firebaseUser.uid, email: firebaseUser.email ?? ''),
           ),
         );
       }

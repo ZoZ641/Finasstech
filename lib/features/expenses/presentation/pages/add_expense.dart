@@ -1,28 +1,49 @@
+import 'package:finasstech/core/utils/money_formater.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:uuid/uuid.dart';
 
-class AddExpense extends StatefulWidget {
-  const AddExpense({super.key});
+import '../../../budgeting/presentation/bloc/budget_bloc.dart';
+import '../../domain/entities/expense.dart';
+import '../bloc/expense_bloc.dart';
+
+class AddExpensePage extends StatefulWidget {
+  final Expense? editingExpense;
+
+  const AddExpensePage({super.key, this.editingExpense});
 
   @override
-  State<AddExpense> createState() => _AddExpenseState();
+  State<AddExpensePage> createState() => _AddExpensePageState();
 }
 
-class _AddExpenseState extends State<AddExpense> {
+class _AddExpensePageState extends State<AddExpensePage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _vendorController = TextEditingController();
 
   DateTime? _selectedDate;
-  String? _selectedAccount;
   String? _selectedCategory;
+  int _selectedRecurrence = 0;
 
-  final List<String> _accounts = ["Cash", "Bank", "Credit Card"];
-  final List<String> _categories = ["Food", "Transport", "Entertainment"];
+  @override
+  void initState() {
+    super.initState();
+    //_categories = ["Food", "Transport", "Entertainment", "Sales"];
+
+    final editing = widget.editingExpense;
+    if (editing != null) {
+      _amountController.text = editing.amount.toStringAsFixed(2);
+      _vendorController.text = editing.vendor;
+      _selectedDate = editing.date;
+      _selectedCategory = editing.category;
+      _selectedRecurrence = editing.recurrence;
+    }
+  }
 
   void _pickDate(BuildContext context) async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
@@ -34,159 +55,165 @@ class _AddExpenseState extends State<AddExpense> {
     }
   }
 
-  void _addAccount() {
-    // Future: Add account functionality
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Account Name'),
-            content: TextField(),
-            actions: [
-              OutlinedButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
-              ),
-              OutlinedButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Save'),
-              ),
-            ],
-          ),
-    );
-  }
-
   void _saveExpense() {
-    if (_formKey.currentState!.validate()) {
-      // Save expense logic
+    if (_formKey.currentState!.validate() &&
+        _selectedDate != null &&
+        _selectedCategory != null) {
+      final expense = Expense(
+        id: widget.editingExpense?.id ?? const Uuid().v4(),
+        amount: double.parse(
+          _amountController.text.replaceAll(',', '').replaceAll('£', '').trim(),
+        ),
+        date: _selectedDate!,
+        vendor: _vendorController.text,
+        category: _selectedCategory!,
+        recurrence: _selectedRecurrence,
+      );
+
+      if (widget.editingExpense != null) {
+        context.read<ExpenseBloc>().add(UpdateExpenseEvent(expense));
+        /* context.read<BudgetBloc>().add(
+          CalculateBudgetUsageEvent(budget: context.read<BudgetBloc>().budget!),
+        );*/
+      } else {
+        context.read<ExpenseBloc>().add(AddExpenseEvent(expense));
+        /* context.read<BudgetBloc>().add(
+          CalculateBudgetUsageEvent(budget: context.read<BudgetBloc>().budget!),
+        );*/
+      }
+
+      Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.editingExpense != null;
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Add Expense")),
+      appBar: AppBar(title: Text(isEditing ? "Edit Expense" : "Add Expense")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
-            children: [
-              // Amount Field
-              TextFormField(
-                controller: _amountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: "Amount",
-                  hintText: '£100',
-                  suffixIcon: Icon(Icons.money),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                // Amount Field
+                TextFormField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [MoneyInputFormatter()],
+                  decoration: const InputDecoration(
+                    labelText: "Amount",
+                    hintText: '£100',
+                    suffixIcon: Icon(Icons.money),
+                  ),
+                  validator: (value) => value!.isEmpty ? "Enter amount" : null,
                 ),
-                validator: (value) => value!.isEmpty ? "Enter amount" : null,
-              ),
+                const SizedBox(height: 20),
 
-              const SizedBox(height: 30),
-
-              // Date Picker
-              TextFormField(
-                readOnly: true,
-                onTap: () => _pickDate(context),
-                decoration: InputDecoration(
-                  labelText: "Date",
-                  suffixIcon: Icon(Icons.calendar_today),
+                // Date Picker
+                TextFormField(
+                  readOnly: true,
+                  onTap: () => _pickDate(context),
+                  decoration: const InputDecoration(
+                    labelText: "Date",
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  controller: TextEditingController(
+                    text:
+                        _selectedDate == null
+                            ? "Select a date"
+                            : "${_selectedDate!.toLocal()}".split(' ')[0],
+                  ),
                 ),
+                const SizedBox(height: 20),
 
-                controller: TextEditingController(
-                  text:
-                      _selectedDate == null
-                          ? "Select a date"
-                          : "${_selectedDate!.toLocal()}".split(' ')[0],
+                // Vendor Field
+                TextFormField(
+                  controller: _vendorController,
+                  decoration: const InputDecoration(
+                    labelText: "Vendor",
+                    suffixIcon: Icon(Icons.store),
+                  ),
+                  validator: (value) => value!.isEmpty ? "Enter vendor" : null,
                 ),
-              ),
+                const SizedBox(height: 20),
 
-              const SizedBox(height: 30),
-
-              // Account Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedAccount,
-                decoration: const InputDecoration(
-                  labelText: "Account",
-                  suffixIcon: Icon(Icons.credit_card),
-                ),
-                items:
-                    _accounts
-                        .map(
-                          (account) => DropdownMenuItem(
-                            value: account,
-                            child: Text(account),
-                          ),
-                        )
-                        .toList()
-                      ..add(
-                        DropdownMenuItem(
-                          value: "Add Account",
-                          child: Text("➕ Add Account"),
-                          onTap: () => _addAccount,
-                        ),
-                      ),
-                onChanged: (value) {
-                  if (value == "Add Account") {
-                    _addAccount();
-                  } else {
+                // Recurring Dropdown
+                DropdownButtonFormField<int>(
+                  value: _selectedRecurrence,
+                  decoration: const InputDecoration(
+                    labelText: "Recurring",
+                    suffixIcon: Icon(Icons.repeat),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 0, child: Text('None')),
+                    DropdownMenuItem(value: 1, child: Text('Weekly')),
+                    DropdownMenuItem(value: 2, child: Text('Monthly')),
+                  ],
+                  onChanged: (value) {
                     setState(() {
-                      _selectedAccount = value;
+                      _selectedRecurrence = value!;
                     });
-                  }
-                },
-              ),
-
-              const SizedBox(height: 30),
-
-              // Vendor Field
-              TextFormField(
-                controller: _vendorController,
-                decoration: const InputDecoration(
-                  labelText: "Vendor",
-                  suffixIcon: Icon(Icons.villa),
+                  },
                 ),
-                validator: (value) => value!.isEmpty ? "Enter vendor" : null,
-              ),
+                const SizedBox(height: 20),
 
-              const SizedBox(height: 30),
+                // Category Dropdown
+                BlocBuilder<BudgetBloc, BudgetState>(
+                  builder: (context, state) {
+                    List<String> dynamicCategories = [];
 
-              // Category Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: "Category",
-                  suffixIcon: Icon(Icons.sell_outlined),
+                    if (state is BudgetLoaded && state.budget != null) {
+                      dynamicCategories =
+                          state.budget!.categories.keys.toList();
+                    } else if (state is BudgetCreated) {
+                      dynamicCategories = state.budget.categories.keys.toList();
+                    } else if (state is BudgetUpdated) {
+                      dynamicCategories = state.budget.categories.keys.toList();
+                    } else if (state is BudgetUsageCalculated) {
+                      dynamicCategories = state.usageByCategory.keys.toList();
+                    }
+
+                    final allCategories =
+                        {...dynamicCategories, "Sales"}.toList();
+
+                    return DropdownButtonFormField<String>(
+                      value: _selectedCategory,
+                      decoration: const InputDecoration(
+                        labelText: "Category",
+                        suffixIcon: Icon(Icons.category),
+                      ),
+                      items:
+                          allCategories
+                              .map(
+                                (category) => DropdownMenuItem(
+                                  value: category,
+                                  child: Text(category),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategory = value;
+                        });
+                      },
+                    );
+                  },
                 ),
-                items:
-                    _categories
-                        .map(
-                          (category) => DropdownMenuItem(
-                            value: category,
-                            child: Text(category),
-                          ),
-                        )
-                        .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedCategory = value;
-                  });
-                },
-              ),
 
-              const SizedBox(height: 30),
-
-              // Save Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _saveExpense,
-                  child: const Text("Add"),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _saveExpense,
+                    child: Text(isEditing ? "Update" : "Add"),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

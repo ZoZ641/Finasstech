@@ -8,11 +8,11 @@ import 'package:finasstech/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:finasstech/features/budgeting/data/models/budget_model.dart';
 import 'package:finasstech/features/budgeting/domain/usecases/calculate_budget_usage.dart';
 import 'package:finasstech/features/budgeting/presentation/bloc/budget_bloc.dart';
-import 'package:finasstech/hive/hive_register.g.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_ce_flutter/adapters.dart';
+import 'package:path_provider/path_provider.dart';
 import 'features/auth/domain/usecases/user_sign_out.dart';
 import 'features/budgeting/data/datasources/budget_local_data_source.dart';
 import 'features/budgeting/data/repository/budget_repository_impl.dart';
@@ -22,27 +22,48 @@ import 'features/budgeting/domain/usecases/create_budget_with_prophet.dart';
 import 'features/budgeting/domain/usecases/create_initial_budget.dart';
 import 'features/budgeting/domain/usecases/get_Latest_Budget.dart';
 import 'features/budgeting/domain/usecases/update_budget_categories.dart';
+import 'features/expenses/data/datasources/expense_local_data_source.dart';
+import 'features/expenses/data/models/expense_model.dart';
+import 'features/expenses/data/repository/expense_repository_impl.dart';
+import 'features/expenses/domain/repository/expense_repository.dart';
+import 'features/expenses/domain/usecases/add_expense.dart';
+import 'features/expenses/domain/usecases/delete_expense.dart';
+import 'features/expenses/domain/usecases/get_all_expenses.dart';
+import 'features/expenses/domain/usecases/update_expense.dart';
+import 'features/expenses/presentation/bloc/expense_bloc.dart';
 import 'firebase_options.dart';
+import 'hive/hive_adapters.dart';
 
 final serviceLocator = GetIt.instance;
 
 Future<void> initDependencies() async {
+  final appDocDir = await getApplicationDocumentsDirectory();
   //initiate hive
-  await Hive.initFlutter();
-  Hive.registerAdapters();
+  Hive
+    ..init(appDocDir.path)
+    ..registerAdapter(ExpenseModelAdapter())
+    ..registerAdapter(UserModelAdapter())
+    ..registerAdapter(BudgetModelAdapter())
+    ..registerAdapter(BudgetCategoryModelAdapter());
+  //auth feature dependencies
   await Hive.openBox<User>('user');
   // Budget feature dependencies
   final budgetBox = await Hive.openBox<BudgetModel>('budgets');
-  budgetBox.clear();
-  final transactionsBox = await Hive.openBox('transactions');
+  //budgetBox.clear();
 
+  //print(budgetBox.keys);
+  //print(budgetBox.get('budget_1745180924854')?.toMap());
+  final expensesBox = await Hive.openBox<ExpenseModel>('expenses');
+  //expensesBox.clear();
   // final budget = budgetBox.values.toList();
   // print(budget);
   //auth feature dependencies
   _initAuth();
 
   //budget feature dependencies
-  _initBudget(budgetBox, transactionsBox);
+  _initBudget(budgetBox, expensesBox);
+
+  _initExpense(expensesBox);
 
   /* Firebase setup  */
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -102,6 +123,30 @@ void _initBudget(Box<BudgetModel> budgetBox, Box transactionsBox) {
         updateBudgetCategories: serviceLocator(),
         getLatestBudget: serviceLocator(),
         calculateBudgetUsage: serviceLocator(),
+      ),
+    );
+}
+
+void _initExpense(Box<ExpenseModel> expensesBox) {
+  serviceLocator
+    ..registerFactory<ExpenseLocalDataSource>(
+      () => ExpenseLocalDataSourceImpl(expenseBox: expensesBox),
+    )
+    ..registerFactory<ExpenseRepository>(
+      () => ExpenseRepositoryImpl(serviceLocator()),
+    )
+    ..registerFactory(() => AddExpense(serviceLocator()))
+    ..registerFactory(() => UpdateExpense(serviceLocator()))
+    ..registerFactory(() => DeleteExpense(serviceLocator()))
+    ..registerFactory(() => GetAllExpenses(serviceLocator()))
+    ..registerLazySingleton(
+      () => ExpenseBloc(
+        addExpense: serviceLocator(),
+        updateExpense: serviceLocator(),
+        deleteExpense: serviceLocator(),
+        getAllExpenses: serviceLocator(),
+        /*calculateBudgetUsage: serviceLocator(),
+        budgetBloc: serviceLocator<BudgetBloc>(),*/
       ),
     );
 }

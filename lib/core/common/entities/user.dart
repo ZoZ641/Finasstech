@@ -1,11 +1,6 @@
-import 'package:hive_ce/hive.dart';
-
-@HiveType(typeId: 1)
-class User extends HiveObject {
-  @HiveField(0)
+class User {
   final String uid;
-  @HiveField(1)
   final String email;
 
-  User(this.uid, this.email);
+  User({required this.uid, required this.email});
 }

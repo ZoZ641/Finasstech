@@ -2,11 +2,13 @@ import 'package:finasstech/features/budgeting/data/models/budget_category_model.
 import 'package:finasstech/features/budgeting/data/models/budget_model.dart';
 import 'package:hive_ce/hive.dart';
 
-import '../../../../core/common/entities/user.dart';
+import '../features/auth/data/models/user_model.dart';
+import '../features/expenses/data/models/expense_model.dart';
 
 @GenerateAdapters([
-  AdapterSpec<User>(),
+  AdapterSpec<UserModel>(),
   AdapterSpec<BudgetModel>(),
   AdapterSpec<BudgetCategoryModel>(),
+  AdapterSpec<ExpenseModel>(),
 ])
 part 'hive_adapters.g.dart';

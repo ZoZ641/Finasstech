@@ -67,7 +67,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Stream<User?> authStateChanges() {
     return firebaseSource.idTokenChanges().map((firebaseUser) {
       if (firebaseUser == null) return null;
-      return User(firebaseUser.uid, firebaseUser.email ?? '');
+      return User(uid: firebaseUser.uid, email: firebaseUser.email ?? '');
     });
   }
 

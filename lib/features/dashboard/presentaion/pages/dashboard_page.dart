@@ -20,7 +20,7 @@ class _DashboardPageState extends State<DashboardPage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => AddExpense()),
+            MaterialPageRoute(builder: (context) => AddExpensePage()),
           );
         },
         child: Icon(Icons.add),
