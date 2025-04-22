@@ -94,7 +94,6 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   /// The budget is saved to the local storage and returned.
   ///
   /// If there is an error during the process, a [ServerException] is thrown.
-
   Future<BudgetModel> createBudgetWithProphetForecast() async {
     try {
       //TODO: call prophet to get forecast
@@ -127,7 +126,6 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   /// an error during the update process.
   ///
   /// Returns the updated [BudgetModel] upon successful update.
-
   Future<BudgetModel> updateBudgetCategories({
     required String budgetId,
     required Map<String, BudgetCategoryModel> categories,
@@ -161,7 +159,6 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   /// as a [BudgetModel].
   ///
   /// Throws a [ServerException] if there is an error during retrieval.
-
   Future<BudgetModel?> getLatestBudget() async {
     try {
       if (budgetBox.isEmpty) return null;
@@ -200,7 +197,6 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
       final now = DateTime.now();
       final thisYearStart = DateTime(now.year);
       final thisYearEnd = DateTime(now.year + 1);
-
       final filteredSales = transactionsBox.values.where(
         (e) =>
             e.category.toLowerCase() == 'sales' &&
@@ -240,7 +236,12 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
 
     final Map<String, double> usageMap = {};
 
-    for (final expense in transactionsBox.values) {
+    final now = DateTime.now();
+    final thisYearStart = DateTime(now.year);
+    final thisYearEnd = DateTime(now.year + 1);
+    for (final expense in transactionsBox.values.where(
+      (e) => e.date.isAfter(thisYearStart) && e.date.isBefore(thisYearEnd),
+    )) {
       if (!usageMap.containsKey(expense.category)) {
         usageMap[expense.category] = 0;
       }

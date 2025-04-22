@@ -76,7 +76,7 @@ class _BudgetPageState extends State<BudgetPage> {
           return const CreateBudgetPage();
         }
 
-        return const Center(child: Text('Something went wrong'));
+        return const Loader();
       },
     );
   }

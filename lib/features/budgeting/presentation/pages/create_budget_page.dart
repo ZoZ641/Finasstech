@@ -1,4 +1,5 @@
 import 'package:finasstech/core/common/widgets/loader.dart';
+import 'package:finasstech/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
@@ -57,12 +58,16 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
           debugPrint('existingBudget: $existingBudget');
           debugPrint('categories length: ${categories.length}');
 
-          showSnackBar(
-            context,
-            'Success',
-            'Customize your budget categories below.',
-            ContentType.success,
-          );
+          Future.microtask(() {
+            if (mounted) {
+              showSnackBar(
+                context,
+                'Success',
+                'Customize your budget categories below.',
+                ContentType.success,
+              );
+            }
+          });
         } else if (state is BudgetUpdated) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
@@ -194,13 +199,26 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
   }
 
   void _saveCategories() {
-    if (existingBudget != null) {
-      context.read<BudgetBloc>().add(
-        UpdateBudgetCategoriesEvent(
-          budgetId: existingBudget!.id,
-          categories: categories,
-        ),
-      );
+    if (existingBudget == null) {
+      debugPrint('❗ Tried to save but existingBudget is null');
+      return;
     }
+
+    debugPrint('💾 Saving budget with ${categories.length} categories...');
+    context.read<BudgetBloc>().add(
+      UpdateBudgetCategoriesEvent(
+        budgetId: existingBudget!.id,
+        categories: categories,
+      ),
+    );
+    showSnackBar(
+      context,
+      'Success',
+      'Budget created successfully!',
+      ContentType.success,
+    );
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (context) => MyApp()));
   }
 }

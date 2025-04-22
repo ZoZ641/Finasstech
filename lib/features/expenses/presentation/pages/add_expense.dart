@@ -29,7 +29,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
   void initState() {
     super.initState();
     //_categories = ["Food", "Transport", "Entertainment", "Sales"];
-
+    _selectedCategory = null;
     final editing = widget.editingExpense;
     if (editing != null) {
       _amountController.text = editing.amount.toStringAsFixed(2);
@@ -168,9 +168,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
                   builder: (context, state) {
                     List<String> dynamicCategories = [];
 
-                    if (state is BudgetLoaded && state.budget != null) {
-                      dynamicCategories =
-                          state.budget!.categories.keys.toList();
+                    if (state is BudgetLoaded) {
+                      dynamicCategories = state.budget.categories.keys.toList();
                     } else if (state is BudgetCreated) {
                       dynamicCategories = state.budget.categories.keys.toList();
                     } else if (state is BudgetUpdated) {
@@ -183,13 +182,17 @@ class _AddExpensePageState extends State<AddExpensePage> {
                         {...dynamicCategories, "Sales"}.toList();
 
                     return DropdownButtonFormField<String>(
-                      value: _selectedCategory,
+                      value:
+                          allCategories.contains(_selectedCategory)
+                              ? _selectedCategory
+                              : null,
                       decoration: const InputDecoration(
                         labelText: "Category",
                         suffixIcon: Icon(Icons.category),
                       ),
                       items:
                           allCategories
+                              .toSet()
                               .map(
                                 (category) => DropdownMenuItem(
                                   value: category,
