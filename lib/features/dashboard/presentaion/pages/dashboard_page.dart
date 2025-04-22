@@ -45,22 +45,9 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
         ),
         body: ListView(
           children: [
-            GraphWidget(
-              title: 'Income',
-              amount: '2,500',
-              duration: 'This week',
-              isGraph: false,
-            ),
-            GraphWidget(
-              title: 'Expenses',
-              duration: 'This week',
-              amount: '1,200',
-            ),
-            GraphWidget(
-              title: 'Cash Flow',
-              duration: 'This week',
-              amount: '1,300',
-            ),
+            GraphWidget(title: 'Income', amount: '2,500', isGraph: false),
+            GraphWidget(title: 'Expenses', amount: '1,200'),
+            GraphWidget(title: 'Cash Flow', amount: '1,300'),
             Container(
               margin: EdgeInsets.symmetric(vertical: 20),
               child: Divider(thickness: 2, color: Color(0xFF3f5043)),
