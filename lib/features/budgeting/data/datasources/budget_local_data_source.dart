@@ -16,7 +16,7 @@ abstract interface class BudgetLocalDataSource {
   });
   Future<BudgetModel?> getLatestBudget();
   Future<void> calculateBudgetUsageFromExpenses();
-  Future<List<Map<String, dynamic>>> getTransactionsHistoryForProphet();
+  Future<Map<String, dynamic>> getTransactionsHistoryForProphet(String period);
 }
 
 class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
@@ -29,6 +29,12 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   });
 
   @override
+  /// Checks if there is existing budget data in the local storage.
+  ///
+  /// Returns true if there is existing budget data, false otherwise.
+  ///
+  /// If there is an error when checking if there is existing budget data,
+  /// it returns false.
   Future<bool> hasExistingBudgetData() async {
     try {
       return budgetBox.isNotEmpty;
@@ -38,6 +44,24 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   }
 
   @override
+  /// Creates an initial budget with a given last year's sales.
+  ///
+  /// The initial budget will have a forecasted sales of 1.2 times the last year's sales.
+  /// The budget will have the following categories:
+  ///
+  /// - Salaries
+  /// - Stock
+  /// - Advetisement
+  /// - Rent
+  /// - Insurance
+  /// - Electricity
+  /// - Water
+  /// - Equipment
+  /// - Maintenance
+  ///
+  /// The categories will have a default allocation of 30%, 40%, 5%, 8%, 3%, 2%, 1%, 7%, and 4% respectively.
+  ///
+  /// If there is an error when creating the initial budget, it throws a [ServerException].
   Future<BudgetModel> createInitialBudget({
     required double lastYearSales,
   }) async {
@@ -61,9 +85,20 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   }
 
   @override
+  /// Creates a new budget using a Prophet forecast for sales.
+  ///
+  /// It retrieves the transaction history for the past year and uses it to
+  /// generate a sales forecast. The forecasted sales value is then used to
+  /// create default budget categories and their allocations.
+  ///
+  /// The budget is saved to the local storage and returned.
+  ///
+  /// If there is an error during the process, a [ServerException] is thrown.
+
   Future<BudgetModel> createBudgetWithProphetForecast() async {
     try {
-      final transactionHistory = await getTransactionsHistoryForProphet();
+      //TODO: call prophet to get forecast
+      final transactionHistory = await getTransactionsHistoryForProphet("365");
       final forecastedSales = 100000.0; // Replace later with Prophet forecast
 
       final categories = _createDefaultBudgetCategories(forecastedSales);
@@ -84,6 +119,15 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   }
 
   @override
+  /// Updates the categories of an existing budget with the given [budgetId].
+  ///
+  /// Replaces the current categories with the provided [categories] map.
+  ///
+  /// Throws a [ServerException] if the budget is not found or if there is
+  /// an error during the update process.
+  ///
+  /// Returns the updated [BudgetModel] upon successful update.
+
   Future<BudgetModel> updateBudgetCategories({
     required String budgetId,
     required Map<String, BudgetCategoryModel> categories,
@@ -110,6 +154,14 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   }
 
   @override
+  /// Retrieves the latest budget from the local storage.
+  ///
+  /// If there are no budgets stored, it returns null. Otherwise, it finds
+  /// the budget with the most recent `updatedAt` timestamp and returns it
+  /// as a [BudgetModel].
+  ///
+  /// Throws a [ServerException] if there is an error during retrieval.
+
   Future<BudgetModel?> getLatestBudget() async {
     try {
       if (budgetBox.isEmpty) return null;
@@ -130,11 +182,40 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getTransactionsHistoryForProphet() async {
+  /// Retrieves the transaction history for the given [period] to be used in the
+  /// Prophet forecast.
+  //
+  /// The [period] should be a string representing the forecast period in days.
+  //
+  /// It returns a map containing the sales for the given period and the
+  /// forecast period.
+  //
+  /// The sales are filtered by category 'sales' and date range of the current year.
+  //
+  /// If there is an error during retrieval, it throws a [ServerException].
+  Future<Map<String, dynamic>> getTransactionsHistoryForProphet(
+    String period,
+  ) async {
     try {
-      return transactionsBox.values
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
+      final now = DateTime.now();
+      final thisYearStart = DateTime(now.year);
+      final thisYearEnd = DateTime(now.year + 1);
+
+      final filteredSales = transactionsBox.values.where(
+        (e) =>
+            e.category.toLowerCase() == 'sales' &&
+            e.date.isAfter(thisYearStart) &&
+            e.date.isBefore(thisYearEnd),
+      );
+
+      final salesList =
+          filteredSales
+              .map(
+                (e) => {"amount": e.amount, "date": e.date.toIso8601String()},
+              )
+              .toList();
+
+      return {"sales": salesList, "forecast_period": period};
     } catch (e) {
       throw ServerException(
         'Failed to get transaction history: ${e.toString()}',
@@ -143,8 +224,18 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   }
 
   @override
+  /// Calculates the budget usage from the given expenses.
+  //
+  /// It will update the budget in the database with the calculated usage.
+  //
+  /// The usage is calculated by summing the amounts of each expense by category.
+  //
+  /// If there is no budget in the database, it will not do anything.
+  //
+  /// If there is an error during the calculation, it throws a [ServerException].
   Future<void> calculateBudgetUsageFromExpenses() async {
     if (budgetBox.isEmpty) return;
+    //TODO: call get latest budget
     final budget = budgetBox.getAt(0)!;
 
     final Map<String, double> usageMap = {};

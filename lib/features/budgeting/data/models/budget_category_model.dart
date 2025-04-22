@@ -43,6 +43,17 @@ class BudgetCategoryModel extends BudgetCategory with HiveObjectMixin {
     );
   }
 
+  /// Converts the [BudgetCategoryModel] to a map representation that can be used for
+  /// JSON serialization.
+  ///
+  /// The map contains the following keys:
+  ///
+  /// - `name`: The name of the category.
+  /// - `percentage`: The percentage of the category.
+  /// - `amount`: The amount allocated to the category.
+  /// - `usage`: The usage of the category.
+  /// - `minRecommendedPercentage`: The minimum recommended percentage of the category.
+  /// - `maxRecommendedPercentage`: The maximum recommended percentage of the category.
   Map<String, dynamic> toMap() {
     return {
       'name': name,
@@ -62,6 +73,26 @@ class BudgetCategoryModel extends BudgetCategory with HiveObjectMixin {
       usage: entity.usage,
       minRecommendedPercentage: entity.minRecommendedPercentage,
       maxRecommendedPercentage: entity.maxRecommendedPercentage,
+    );
+  }
+
+  BudgetCategoryModel copyWith({
+    String? name,
+    double? percentage,
+    double? amount,
+    double? usage,
+    double? minRecommendedPercentage,
+    double? maxRecommendedPercentage,
+  }) {
+    return BudgetCategoryModel(
+      name: name ?? this.name,
+      percentage: percentage ?? this.percentage,
+      amount: amount ?? this.amount,
+      usage: usage ?? this.usage,
+      minRecommendedPercentage:
+          minRecommendedPercentage ?? this.minRecommendedPercentage,
+      maxRecommendedPercentage:
+          maxRecommendedPercentage ?? this.maxRecommendedPercentage,
     );
   }
 }

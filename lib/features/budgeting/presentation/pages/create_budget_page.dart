@@ -7,9 +7,11 @@ import '../../../../core/common/entities/user.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../../../core/utils/money_formater.dart';
 import '../../../../core/utils/show_snackbar.dart';
+import '../../data/models/budget_category_model.dart';
 import '../../domain/entities/budget.dart';
 import '../../domain/entities/budget_category.dart';
 import '../bloc/budget_bloc.dart';
+import '../widgets/budget_categories.dart';
 import '../widgets/budget_category_item.dart';
 import 'budget_dashboard.dart';
 
@@ -23,18 +25,15 @@ class CreateBudgetPage extends StatefulWidget {
 class _CreateBudgetPageState extends State<CreateBudgetPage> {
   final TextEditingController _lastYearSalesController =
       TextEditingController();
-  late User currentUser;
-  bool isFirstTimeUser = true;
   Budget? existingBudget;
-  Map<String, BudgetCategory> categories = {};
+  Map<String, BudgetCategoryModel> categories = {};
+  bool awaitingCategorySetup = false;
 
-  @override
+  /*@override
   void initState() {
     super.initState();
-
-    // Check if the user has existing data
     context.read<BudgetBloc>().add(CheckForExistingBudgetData());
-  }
+  }*/
 
   @override
   void dispose() {
@@ -46,147 +45,105 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
   Widget build(BuildContext context) {
     return BlocConsumer<BudgetBloc, BudgetState>(
       listener: (context, state) {
-        if (state is BudgetCreated ||
-            state is BudgetCreatedNeedsCategorization) {
-          // Handle both normal creation and the specialized state the same way
-          final budget =
-              state is BudgetCreated
-                  ? state.budget
-                  : (state as BudgetCreatedNeedsCategorization).budget;
-
-          setState(() {
-            existingBudget = budget;
-            categories = Map.from(budget.categories);
-            isFirstTimeUser = false; // Ensure we show categories view
-          });
-
-          showSnackBar(
-            context,
-            'Success',
-            'Please customize your budget categories',
-            ContentType.success,
-          );
-        } else if (state is BudgetUpdated) {
-          final budget = state.budget;
-
-          // Navigate to dashboard after categories are updated
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => BudgetDashboard(budget: budget),
-            ),
-          );
-
-          showSnackBar(
-            context,
-            'Success',
-            'Budget has been updated successfully!',
-            ContentType.success,
-          );
-        } else if (state is BudgetLoaded) {
-          // This is for existing budgets when app is reopened
+        if (state is BudgetCreatedNeedsCategorization) {
+          debugPrint('✅ Switching to Budget Category Setup View...');
           setState(() {
             existingBudget = state.budget;
             categories = Map.from(state.budget.categories);
+            awaitingCategorySetup = true;
           });
 
-          // Calculate usage for loaded budget
+          debugPrint('awaitingCategorySetup: $awaitingCategorySetup');
+          debugPrint('existingBudget: $existingBudget');
+          debugPrint('categories length: ${categories.length}');
+
+          showSnackBar(
+            context,
+            'Success',
+            'Customize your budget categories below.',
+            ContentType.success,
+          );
+        } else if (state is BudgetUpdated) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => BudgetDashboard(budget: state.budget),
+            ),
+          );
+
+          showSnackBar(
+            context,
+            'Success',
+            'Budget updated successfully!',
+            ContentType.success,
+          );
+        } else if (state is BudgetLoaded) {
+          setState(() {
+            existingBudget = state.budget;
+            categories = Map.from(state.budget.categories);
+            awaitingCategorySetup = true;
+          });
+
           context.read<BudgetBloc>().add(
             CalculateBudgetUsageEvent(budget: state.budget),
           );
-        } /*else if (state is BudgetUsageCalculated) {
-          // Only navigate to dashboard after usage is calculated
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder:
-                  (context) => BudgetDashboard(
-                    budget: state.budget,
-                    usage: state.usageByCategory,
-                  ),
-            ),
-          );
-        }*/
+        } else if (state is BudgetEmpty) {
+          debugPrint('🆕 No budget found, showing setup screen.');
+          setState(() {
+            existingBudget = null;
+            categories = {};
+            awaitingCategorySetup = false;
+          });
+        }
       },
       builder: (context, state) {
-        print("Current state: $state"); // Add this for debugging
-
-        if (state is BudgetLoading) {
+        debugPrint('awaitingCategorySetup: $awaitingCategorySetup');
+        debugPrint('existingBudget: $existingBudget');
+        debugPrint('categories length: ${categories.length}');
+        if (state is BudgetLoading && !awaitingCategorySetup) {
           return const Loader();
         }
 
-        // Add specific handling for our state
-        if (state is BudgetCreatedNeedsCategorization) {
-          return _buildBudgetCategoriesView();
+        if (awaitingCategorySetup && existingBudget != null) {
+          debugPrint('✅ Rendering BudgetCategoriesScreen');
+          return BudgetCategoriesScreen(
+            budget: existingBudget!,
+            categories: categories,
+            onSave: _saveCategories,
+            onCategoryChanged: (key, updatedCategory) {
+              setState(() => categories[key] = updatedCategory);
+            },
+          );
         }
 
-        if (isFirstTimeUser && existingBudget == null) {
-          return _buildFirstTimeUserView();
-        } else if (existingBudget != null) {
-          return _buildBudgetCategoriesView();
-        }
-
-        return const Center(child: Text('Something went wrong'));
+        // This includes initial empty case and returning user
+        return _buildFirstTimeUserView();
       },
     );
   }
 
   Widget _buildFirstTimeUserView() {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Welcome to Budget Setup!'),
-        titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      ),
+      appBar: AppBar(title: const Text('Welcome to Budget Setup!')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'To create your initial budget, please enter your average sales from last year.',
-            ),
+            const Text('Enter your average sales from last year to begin.'),
             const SizedBox(height: 24),
             TextField(
               controller: _lastYearSalesController,
               keyboardType: TextInputType.number,
               inputFormatters: [MoneyInputFormatter()],
               decoration: const InputDecoration(
-                labelText: 'Last Year Average Sales',
+                labelText: 'Last Year Sales',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.currency_pound),
               ),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
-                final salesText =
-                    _lastYearSalesController.text
-                        .replaceAll(',', '')
-                        .replaceAll('£', '')
-                        .trim();
-                if (salesText.isEmpty) {
-                  showSnackBar(
-                    context,
-                    'error',
-                    'Please enter your last year sales',
-                    ContentType.failure,
-                  );
-                  return;
-                }
-
-                final sales = double.tryParse(salesText);
-                if (sales == null || sales <= 0) {
-                  showSnackBar(
-                    context,
-                    'error',
-                    'Please enter a valid amount',
-                    ContentType.failure,
-                  );
-                  return;
-                }
-
-                context.read<BudgetBloc>().add(
-                  CreateInitialBudgetEvent(lastYearSales: sales),
-                );
-              },
+              onPressed: _handleSalesSubmit,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppPallete.primaryColor,
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -202,112 +159,42 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
     );
   }
 
-  Widget _buildBudgetCategoriesView() {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Forecasted Sales: \$${existingBudget!.forecastedSales.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: _saveCategories,
-                  child: const Text('Save Budget'),
-                ),
-              ],
-            ),
-            const Divider(),
-            Expanded(
-              child: ListView.builder(
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  final categoryKey = categories.keys.elementAt(index);
-                  final category = categories[categoryKey]!;
+  void _handleSalesSubmit() {
+    final salesText =
+        _lastYearSalesController.text
+            .replaceAll(',', '')
+            .replaceAll('£', '')
+            .trim();
 
-                  return BudgetCategoryItem(
-                    category: category,
-                    forecastedSales: existingBudget!.forecastedSales,
-                    onPercentageChanged: (newPercentage) {
-                      setState(() {
-                        if (newPercentage == 0) {
-                          // If user sets to 0, we keep category but set values to 0
-                          categories[categoryKey] = BudgetCategory(
-                            name: category.name,
-                            percentage: 0,
-                            usage: 0,
-                            amount: 0,
-                            minRecommendedPercentage:
-                                category.minRecommendedPercentage,
-                            maxRecommendedPercentage:
-                                category.maxRecommendedPercentage,
-                          );
-                        } else {
-                          categories[categoryKey] = BudgetCategory(
-                            name: category.name,
-                            percentage: newPercentage,
-                            amount:
-                                existingBudget!.forecastedSales *
-                                (newPercentage / 100),
-                            usage: 0,
-                            minRecommendedPercentage:
-                                category.minRecommendedPercentage,
-                            maxRecommendedPercentage:
-                                category.maxRecommendedPercentage,
-                          );
-                        }
-                      });
-                    },
-                    onAmountChanged: (newAmount) {
-                      setState(() {
-                        if (newAmount == 0) {
-                          // If user sets to 0, we keep category but set values to 0
-                          categories[categoryKey] = BudgetCategory(
-                            name: category.name,
-                            percentage: 0,
-                            amount: 0,
-                            usage: 0,
-                            minRecommendedPercentage:
-                                category.minRecommendedPercentage,
-                            maxRecommendedPercentage:
-                                category.maxRecommendedPercentage,
-                          );
-                        } else {
-                          final newPercentage =
-                              (newAmount / existingBudget!.forecastedSales) *
-                              100;
-                          categories[categoryKey] = BudgetCategory(
-                            name: category.name,
-                            percentage: newPercentage,
-                            amount: newAmount,
-                            usage: 0,
-                            minRecommendedPercentage:
-                                category.minRecommendedPercentage,
-                            maxRecommendedPercentage:
-                                category.maxRecommendedPercentage,
-                          );
-                        }
-                      });
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+    if (salesText.isEmpty) {
+      showSnackBar(
+        context,
+        'Error',
+        'Please enter your last year sales.',
+        ContentType.failure,
+      );
+      return;
+    }
+
+    final sales = double.tryParse(salesText);
+    if (sales == null || sales <= 0) {
+      showSnackBar(
+        context,
+        'Error',
+        'Please enter a valid amount.',
+        ContentType.failure,
+      );
+      return;
+    }
+
+    debugPrint('📤 Dispatching CreateInitialBudgetEvent with: £$sales');
+    context.read<BudgetBloc>().add(
+      CreateInitialBudgetEvent(lastYearSales: sales),
     );
   }
 
   void _saveCategories() {
     if (existingBudget != null) {
-      // First update the categories
       context.read<BudgetBloc>().add(
         UpdateBudgetCategoriesEvent(
           budgetId: existingBudget!.id,

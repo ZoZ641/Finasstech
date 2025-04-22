@@ -72,14 +72,16 @@ class _AddExpensePageState extends State<AddExpensePage> {
 
       if (widget.editingExpense != null) {
         context.read<ExpenseBloc>().add(UpdateExpenseEvent(expense));
-        /* context.read<BudgetBloc>().add(
-          CalculateBudgetUsageEvent(budget: context.read<BudgetBloc>().budget!),
-        );*/
       } else {
         context.read<ExpenseBloc>().add(AddExpenseEvent(expense));
-        /* context.read<BudgetBloc>().add(
-          CalculateBudgetUsageEvent(budget: context.read<BudgetBloc>().budget!),
-        );*/
+      }
+
+      // Always recalculate budget after expense changes
+      final budget = context.read<BudgetBloc>().budget;
+      if (budget != null) {
+        context.read<BudgetBloc>().add(
+          CalculateBudgetUsageEvent(budget: budget),
+        );
       }
 
       Navigator.pop(context);

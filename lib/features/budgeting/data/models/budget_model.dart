@@ -27,6 +27,7 @@ class BudgetModel extends Budget with HiveObjectMixin {
          updatedAt: updatedAt,
        );
 
+
   factory BudgetModel.fromMap(Map<String, dynamic> map) {
     final cats = (map['categories'] as Map<String, dynamic>?) ?? {};
     final categories = cats.map(
@@ -49,6 +50,18 @@ class BudgetModel extends Budget with HiveObjectMixin {
     );
   }
 
+  /// Converts the [BudgetModel] to a map representation that can be used for
+  /// JSON serialization.
+  ///
+  /// The map contains the following keys:
+  ///
+  /// - `id`: The id of the budget.
+  /// - `forecastedSales`: The forecasted sales of the budget.
+  /// - `categories`: A map of the categories of the budget, where the key is
+  ///    the id of the category and the value is a map representation of the
+  ///    category, as obtained by [BudgetCategoryModel.toMap].
+  /// - `createdAt`: The creation date of the budget, in ISO 8601 format.
+  /// - `updatedAt`: The last update date of the budget, in ISO 8601 format.
   Map<String, dynamic> toMap() {
     final catMap = categories.map((key, value) => MapEntry(key, value.toMap()));
 
@@ -73,6 +86,7 @@ class BudgetModel extends Budget with HiveObjectMixin {
     );
   }
 
+  /// Converts the [BudgetModel] to a [Budget] entity object.
   Budget toEntity() => Budget(
     id: id,
     forecastedSales: forecastedSales,
@@ -81,6 +95,19 @@ class BudgetModel extends Budget with HiveObjectMixin {
     updatedAt: updatedAt,
   );
 
+  /// Creates a copy of the [BudgetModel] with the given fields replaced with
+  /// the new values.
+  //
+  /// The fields that can be replaced are:
+  //
+  /// - `id`: The id of the budget.
+  /// - `forecastedSales`: The forecasted sales of the budget.
+  /// - `categories`: The categories of the budget.
+  /// - `createdAt`: The creation date of the budget.
+  /// - `updatedAt`: The last update date of the budget.
+  //
+  /// If a field is not provided, the value of the current [BudgetModel]
+  /// instance is used instead.
   BudgetModel copyWith({
     String? id,
     double? forecastedSales,

@@ -32,7 +32,7 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     required this.updateBudgetCategories,
     required this.getLatestBudget,
     required this.calculateBudgetUsage,
-  }) : super(BudgetInitial()) {
+  }) : super(BudgetChecking()) {
     on<CheckForExistingBudgetData>(_onCheckForExistingBudgetData);
     on<CreateInitialBudgetEvent>(_onCreateInitialBudget);
     on<CreateBudgetWithProphetEvent>(_onCreateBudgetWithProphet);
@@ -43,22 +43,38 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
 
   Budget? get budget => _latestBudget;
 
-  void _onCheckForExistingBudgetData(
+  /// Handles [CheckForExistingBudgetData] events by checking if there is
+  /// existing budget data in the repository. Emits a [BudgetLoading] state
+  /// while the check is in progress. If the check is successful and budget
+  /// data exists, it emits a [BudgetDataExistsState] with a value of true.
+  /// If no budget data exists, it emits a [BudgetEmpty] state. In case of
+  /// a failure during the check, it emits a [BudgetError] state with an
+  /// appropriate error message.
+
+  Future<void> _onCheckForExistingBudgetData(
     CheckForExistingBudgetData event,
     Emitter<BudgetState> emit,
   ) async {
     emit(BudgetLoading());
-
     final result = await checkExistingBudgetData(NoParams());
 
-    emit(
-      result.fold(
-        (failure) => BudgetError(message: failure.message),
-        (hasData) => BudgetDataExistsState(hasData),
-      ),
-    );
+    result.fold((failure) => emit(BudgetError(message: failure.message)), (
+      hasData,
+    ) {
+      if (hasData) {
+        emit(const BudgetDataExistsState(true));
+      } else {
+        emit(BudgetEmpty());
+      }
+    });
   }
 
+  /// Handles [CreateInitialBudgetEvent] events by creating a new budget based
+  /// on the given last year's sales and saving it to the repository. If the
+  /// operation is successful, it emits a [BudgetCreatedNeedsCategorization]
+  /// state with the newly created budget. This state explicitly indicates that
+  /// categorization is needed. If the operation fails, it emits a
+  /// [BudgetError] state with an error message.
   Future<void> _onCreateInitialBudget(
     CreateInitialBudgetEvent event,
     Emitter<BudgetState> emit,
@@ -67,14 +83,22 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
 
     final result = await createInitialBudget(event.lastYearSales);
 
-    emit(
-      result.fold((failure) => BudgetError(message: failure.message), (budget) {
-        _latestBudget = budget;
-        return BudgetCreatedNeedsCategorization(budget);
-      }),
-    );
+    result.fold((failure) => emit(BudgetError(message: failure.message)), (
+      budget,
+    ) {
+      _latestBudget = budget;
+      // Critical change: we explicitly need categorization
+      return emit(BudgetCreatedNeedsCategorization(budget));
+    });
   }
 
+  //TODO: make this method only handles the forecasting then calls the _onCreateInitialBudget
+  /// Handles [CreateBudgetWithProphetEvent] events by creating a new budget
+  /// using Prophet forecasting and saving it to the repository. If the
+  /// operation is successful, it emits a [BudgetCreatedNeedsCategorization]
+  /// state with the newly created budget. This state explicitly indicates that
+  /// categorization is needed. If the operation fails, it emits a
+  /// [BudgetError] state with an error message.
   Future<void> _onCreateBudgetWithProphet(
     CreateBudgetWithProphetEvent event,
     Emitter<BudgetState> emit,
@@ -90,6 +114,12 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
       }),
     );
   }
+
+  /// Handles [UpdateBudgetCategoriesEvent] by updating the categories of an
+  /// existing budget. Emits a [BudgetLoading] state while the update is in
+  /// progress. If the update is successful, it emits a [BudgetLoaded] state
+  /// with the updated budget. In case of a failure during the update, it
+  /// emits a [BudgetError] state with an appropriate error message.
 
   Future<void> _onUpdateBudgetCategories(
     UpdateBudgetCategoriesEvent event,
@@ -112,6 +142,12 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     );
   }
 
+  /// Handles [GetLatestBudgetEvent] by retrieving the most recently updated
+  /// budget from local storage. If the operation is successful, it emits a
+  /// [BudgetLoaded] state with the loaded budget. If there is no budget found,
+  /// it emits a [BudgetError] state with an appropriate error message. If the
+  /// operation fails, it emits a [BudgetError] state with the error message
+  /// from the failure.
   Future<void> _onGetLatestBudget(
     GetLatestBudgetEvent event,
     Emitter<BudgetState> emit,
@@ -130,6 +166,10 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     );
   }
 
+  /// Handles [CalculateBudgetUsageEvent] by calculating the usage of each
+  /// category in the given budget and emitting a [BudgetUsageCalculated]
+  /// state with the budget and its usage by category. If the operation fails,
+  /// it emits a [BudgetError] state with an error message.
   Future<void> _onCalculateBudgetUsage(
     CalculateBudgetUsageEvent event,
     Emitter<BudgetState> emit,

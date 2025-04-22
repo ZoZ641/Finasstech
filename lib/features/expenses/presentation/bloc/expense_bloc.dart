@@ -29,6 +29,11 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
     on<DeleteExpenseEvent>(_onDeleteExpense);
   }
 
+/// Handles [LoadExpenses] event by retrieving all expenses from the repository.
+/// Emits an [ExpenseLoading] state initially. If the retrieval is successful,
+/// it emits an [ExpenseLoaded] state with the list of expenses. If the operation
+/// fails, it emits an [ExpenseFailure] state with the error message.
+
   Future<void> _onLoadExpenses(
     LoadExpenses event,
     Emitter<ExpenseState> emit,
@@ -41,11 +46,21 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
     );
   }
 
+  /// Handles [AddExpenseEvent] event by adding a new expense to the repository.
+  /// Emits an [ExpenseLoading] state initially. If the operation is successful,
+  /// it emits an [ExpenseLoaded] state with the updated list of expenses. If the
+  /// operation fails, it emits an [ExpenseFailure] state with the error message.
+  ///
+  /// After the operation is complete, it adds a [LoadExpenses] event to the queue
+  /// to reload the expenses from the repository. This ensures that the expenses
+  /// are up-to-date.
   Future<void> _onAddExpense(
     AddExpenseEvent event,
     Emitter<ExpenseState> emit,
   ) async {
-    print('Adding: ${event.expense}');
+    final currentState = state;
+    emit(ExpenseLoading());
+
     final result = await addExpense(event.expense);
     result.fold(
       (failure) {
@@ -54,11 +69,25 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
       },
       (_) {
         print('Add Success');
+        // Preserve existing expenses in state
+        if (currentState is ExpenseLoaded) {
+          // Add the new expense to the list
+          final updatedExpenses = [...currentState.expenses, event.expense];
+          emit(ExpenseLoaded(updatedExpenses));
+        }
         add(LoadExpenses());
       },
     );
   }
 
+  /// Handles [UpdateExpenseEvent] event by updating an expense in the repository.
+  /// Emits an [ExpenseLoading] state initially. If the operation is successful,
+  /// it emits an [ExpenseLoaded] state with the updated list of expenses. If the
+  /// operation fails, it emits an [ExpenseFailure] state with the error message.
+  ///
+  /// After the operation is complete, it adds a [LoadExpenses] event to the queue
+  /// to reload the expenses from the repository. This ensures that the expenses
+  /// are up-to-date.
   Future<void> _onUpdateExpense(
     UpdateExpenseEvent event,
     Emitter<ExpenseState> emit,
@@ -71,6 +100,14 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
     );
   }
 
+  /// Handles [DeleteExpenseEvent] event by deleting an expense from the repository.
+  /// Emits an [ExpenseLoading] state initially. If the operation is successful,
+  /// it emits an [ExpenseLoaded] state with the updated list of expenses. If the
+  /// operation fails, it emits an [ExpenseFailure] state with the error message.
+  ///
+  /// After the operation is complete, it adds a [LoadExpenses] event to the queue
+  /// to reload the expenses from the repository. This ensures that the expenses
+  /// are up-to-date.
   Future<void> _onDeleteExpense(
     DeleteExpenseEvent event,
     Emitter<ExpenseState> emit,

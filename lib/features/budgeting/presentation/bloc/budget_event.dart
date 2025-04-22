@@ -1,38 +1,46 @@
 part of 'budget_bloc.dart';
 
 @immutable
-sealed class BudgetEvent {}
-
-final class CheckForExistingBudgetData extends BudgetEvent {
-  CheckForExistingBudgetData();
+sealed class BudgetEvent {
+  const BudgetEvent();
 }
 
+/// Checks if there is already saved budget data in Hive
+final class CheckForExistingBudgetData extends BudgetEvent {
+  const CheckForExistingBudgetData();
+}
+
+/// Creates an initial budget with last year's sales as base
 final class CreateInitialBudgetEvent extends BudgetEvent {
   final double lastYearSales;
 
-  CreateInitialBudgetEvent({required this.lastYearSales});
+  const CreateInitialBudgetEvent({required this.lastYearSales});
 }
 
+/// Triggers creation of a new budget using Prophet forecasting
 final class CreateBudgetWithProphetEvent extends BudgetEvent {
-  CreateBudgetWithProphetEvent();
+  const CreateBudgetWithProphetEvent();
 }
 
+/// Updates the categories of an existing budget
 final class UpdateBudgetCategoriesEvent extends BudgetEvent {
   final String budgetId;
   final Map<String, BudgetCategory> categories;
 
-  UpdateBudgetCategoriesEvent({
+  const UpdateBudgetCategoriesEvent({
     required this.budgetId,
     required this.categories,
   });
 }
 
-class GetLatestBudgetEvent extends BudgetEvent {
-  GetLatestBudgetEvent();
+/// Loads the most recently updated budget from local storage
+final class GetLatestBudgetEvent extends BudgetEvent {
+  const GetLatestBudgetEvent();
 }
 
-class CalculateBudgetUsageEvent extends BudgetEvent {
+/// Recalculates category usage based on recorded expenses
+final class CalculateBudgetUsageEvent extends BudgetEvent {
   final Budget budget;
 
-  CalculateBudgetUsageEvent({required this.budget});
+  const CalculateBudgetUsageEvent({required this.budget});
 }

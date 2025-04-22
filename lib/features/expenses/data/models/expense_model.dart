@@ -47,4 +47,15 @@ class ExpenseModel extends Expense with HiveObjectMixin {
     category: expense.category,
     recurrence: expense.recurrence,
   );
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'amount': amount,
+      'date': date,
+      'vendor': vendor,
+      'category': category,
+      'recurrence': recurrence,
+    };
+  }
 }
