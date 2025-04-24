@@ -15,13 +15,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/common/widgets/loader.dart';
+import 'core/services/notification_service.dart';
 import 'core/utils/show_snackbar.dart';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
+import 'features/dashboard/presentaion/bloc/dashboard_bloc.dart';
 import 'features/expenses/presentation/bloc/expense_bloc.dart';
 import 'features/expenses/presentation/pages/expense_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  NotificationService().initNotification();
   await initDependencies();
   runApp(
     MultiBlocProvider(
@@ -30,6 +33,7 @@ void main() async {
         BlocProvider(create: (_) => serviceLocator<AuthBloc>()),
         BlocProvider(create: (_) => serviceLocator<BudgetBloc>()),
         BlocProvider(create: (_) => serviceLocator<ExpenseBloc>()),
+        BlocProvider(create: (_) => serviceLocator<DashboardBloc>()),
       ],
       child: DevicePreview(enabled: false, builder: (context) => const MyApp()),
     ),

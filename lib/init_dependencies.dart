@@ -25,6 +25,7 @@ import 'features/budgeting/domain/usecases/create_budget_with_prophet.dart';
 import 'features/budgeting/domain/usecases/create_initial_budget.dart';
 import 'features/budgeting/domain/usecases/get_Latest_Budget.dart';
 import 'features/budgeting/domain/usecases/update_budget_categories.dart';
+import 'features/dashboard/presentaion/bloc/dashboard_bloc.dart';
 import 'features/expenses/data/datasources/expense_local_data_source.dart';
 import 'features/expenses/data/models/expense_model.dart';
 import 'features/expenses/data/repository/expense_repository_impl.dart';
@@ -94,6 +95,7 @@ Future<void> initDependencies() async {
   _initBudget(budgetBox, expensesBox);
 
   _initExpense(expensesBox);
+  _initDashboard();
 
   /* Firebase setup  */
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -179,4 +181,10 @@ void _initExpense(Box<ExpenseModel> expensesBox) {
         budgetBloc: serviceLocator<BudgetBloc>(),*/
       ),
     );
+}
+
+void _initDashboard() {
+  serviceLocator.registerLazySingleton(
+    () => DashboardBloc(getAllExpenses: serviceLocator()),
+  );
 }

@@ -223,6 +223,7 @@ class _GraphWidgetState extends State<GraphWidget> {
 
   @override
   Widget build(BuildContext context) {
+    print('expense data $_displayData');
     return Card.outlined(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Padding(
@@ -239,8 +240,15 @@ class _GraphWidgetState extends State<GraphWidget> {
             ),
             const SizedBox(height: 5),
             Text(
-              '£${widget.amount}',
-              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              '£${widget.amount.replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color:
+                    double.parse(widget.amount) > 0
+                        ? AppPallete.primaryColor
+                        : Colors.red,
+              ),
             ),
             const SizedBox(height: 5),
             DropdownButton<TimePeriod>(
@@ -257,6 +265,7 @@ class _GraphWidgetState extends State<GraphWidget> {
                   }).toList(),
             ),
             const SizedBox(height: 15),
+
             Visibility(
               visible: widget.isGraph,
               child: SizedBox(
@@ -305,12 +314,13 @@ class _GraphWidgetState extends State<GraphWidget> {
                       LineChartBarData(
                         spots: _displayData,
                         isCurved: true,
-                        gradient: _generateGradient(
+                        color: Colors.green,
+                        /*gradient: _generateGradient(
                           xyCord: _displayData,
                           positiveColor: AppPallete.primaryColor,
                           negativeColor: AppPallete.inputFieldErrorColor,
                           isLine: true,
-                        ),
+                        ),*/
                         barWidth: 4,
                         isStrokeCapRound: true,
                         belowBarData: BarAreaData(

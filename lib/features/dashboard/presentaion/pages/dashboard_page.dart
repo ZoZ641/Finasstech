@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../budgeting/presentation/bloc/budget_bloc.dart';
 import '../../../budgeting/presentation/pages/create_budget_page.dart';
+import '../../../expenses/presentation/bloc/expense_bloc.dart';
 import '../../../expenses/presentation/pages/add_expense.dart';
+import '../bloc/dashboard_bloc.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -17,49 +19,128 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
   void initState() {
     super.initState();
     context.read<BudgetBloc>().add(CheckForExistingBudgetData());
+    context.read<DashboardBloc>().add(CalculateDashboardMetrics());
+  }
+
+  void _handleIncomeTimePeriodChanged(TimePeriod period) {
+    context.read<DashboardBloc>().add(
+      ChangeDashboardWidgetTimePeriod(
+        widgetType: DashboardWidgetType.income,
+        timePeriod: period,
+      ),
+    );
+  }
+
+  void _handleExpensesTimePeriodChanged(TimePeriod period) {
+    context.read<DashboardBloc>().add(
+      ChangeDashboardWidgetTimePeriod(
+        widgetType: DashboardWidgetType.expenses,
+        timePeriod: period,
+      ),
+    );
+  }
+
+  void _handleCashFlowTimePeriodChanged(TimePeriod period) {
+    context.read<DashboardBloc>().add(
+      ChangeDashboardWidgetTimePeriod(
+        widgetType: DashboardWidgetType.cashFlow,
+        timePeriod: period,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<BudgetBloc, BudgetState>(
+    return BlocListener<ExpenseBloc, ExpenseState>(
       listener: (context, state) {
-        if (state is BudgetEmpty) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CreateBudgetPage()),
-          );
-        } else if (state is BudgetDataExistsState && state.hasExistingData) {
-          context.read<BudgetBloc>().add(GetLatestBudgetEvent());
+        if (state is ExpenseLoaded) {
+          // Recalculate dashboard metrics when expenses change
+          context.read<DashboardBloc>().add(CalculateDashboardMetrics());
         }
       },
-      child: Scaffold(
-        appBar: AppBar(title: Text("Dashboard")),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
+      child: BlocListener<BudgetBloc, BudgetState>(
+        listener: (context, state) {
+          if (state is BudgetEmpty) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => AddExpensePage()),
+              MaterialPageRoute(builder: (_) => const CreateBudgetPage()),
             );
-          },
-          child: Icon(Icons.add),
-        ),
-        body: ListView(
-          children: [
-            GraphWidget(title: 'Income', amount: '2,500', isGraph: false),
-            GraphWidget(title: 'Expenses', amount: '1,200'),
-            GraphWidget(title: 'Cash Flow', amount: '1,300'),
-            Container(
-              margin: EdgeInsets.symmetric(vertical: 20),
-              child: Divider(thickness: 2, color: Color(0xFF3f5043)),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'Budget Watch',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
+          } else if (state is BudgetDataExistsState && state.hasExistingData) {
+            context.read<BudgetBloc>().add(GetLatestBudgetEvent());
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(title: const Text("Dashboard")),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AddExpensePage()),
+              ).then((_) {
+                // Recalculate dashboard metrics when returning from adding expense
+                context.read<DashboardBloc>().add(CalculateDashboardMetrics());
+              });
+            },
+            child: const Icon(Icons.add),
+          ),
+          body: BlocBuilder<DashboardBloc, DashboardState>(
+            builder: (context, state) {
+              if (state is DashboardLoading) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (state is DashboardFailure) {
+                return Center(child: Text(state.message));
+              } else if (state is DashboardLoaded) {
+                return ListView(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {},
+                      child: Text('send notification'),
+                    ),
+                    GraphWidget(
+                      title: 'Income',
+                      amount: state.income.toStringAsFixed(0),
+                      isGraph: false,
+                      initialTimePeriod: state.incomePeriod,
+                      onTimePeriodChanged: _handleIncomeTimePeriodChanged,
+                    ),
+                    GraphWidget(
+                      title: 'Expenses',
+                      amount: state.expenses.toStringAsFixed(0),
+                      data: state.expensesData,
+                      initialTimePeriod: state.expensesPeriod,
+                      onTimePeriodChanged: _handleExpensesTimePeriodChanged,
+                    ),
+                    GraphWidget(
+                      title: 'Cash Flow',
+                      amount: state.cashFlow.toStringAsFixed(0),
+                      data: state.cashFlowData,
+                      initialTimePeriod: state.cashFlowPeriod,
+                      onTimePeriodChanged: _handleCashFlowTimePeriodChanged,
+                    ),
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 20),
+                      child: const Divider(
+                        thickness: 2,
+                        color: Color(0xFF3f5043),
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text(
+                        'Budget Watch',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              return const Center(child: CircularProgressIndicator());
+            },
+          ),
         ),
       ),
     );
