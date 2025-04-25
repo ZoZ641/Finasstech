@@ -10,6 +10,7 @@ import '../../domain/usecases/check_existing_budget_data.dart';
 import '../../domain/usecases/create_budget_with_prophet.dart';
 import '../../domain/usecases/create_initial_budget.dart';
 import '../../domain/usecases/get_Latest_Budget.dart';
+import '../../domain/usecases/get_all_budgets.dart';
 import '../../domain/usecases/update_budget_categories.dart';
 
 part 'budget_event.dart';
@@ -22,6 +23,7 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
   final UpdateBudgetCategories updateBudgetCategories;
   final GetLatestBudget getLatestBudget;
   final CalculateBudgetUsage calculateBudgetUsage;
+  final GetAllBudgets getAllBudgets;
 
   Budget? _latestBudget;
 
@@ -32,12 +34,14 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     required this.updateBudgetCategories,
     required this.getLatestBudget,
     required this.calculateBudgetUsage,
+    required this.getAllBudgets,
   }) : super(BudgetChecking()) {
     on<CheckForExistingBudgetData>(_onCheckForExistingBudgetData);
     on<CreateInitialBudgetEvent>(_onCreateInitialBudget);
     on<CreateBudgetWithProphetEvent>(_onCreateBudgetWithProphet);
     on<UpdateBudgetCategoriesEvent>(_onUpdateBudgetCategories);
     on<GetLatestBudgetEvent>(_onGetLatestBudget);
+    on<GetAllBudgetsEvent>(_onGetAllBudgets);
     on<CalculateBudgetUsageEvent>(_onCalculateBudgetUsage);
   }
 
@@ -188,6 +192,18 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _onGetAllBudgets(
+    GetAllBudgetsEvent event,
+    Emitter<BudgetState> emit,
+  ) async {
+    emit(BudgetLoading());
+    final result = await getAllBudgets(NoParams());
+    result.fold(
+      (failure) => emit(BudgetError(message: failure.message)),
+      (budgets) => emit(AllBudgetsLoaded(budgets)),
     );
   }
 }

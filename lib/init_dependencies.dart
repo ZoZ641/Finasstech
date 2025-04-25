@@ -9,6 +9,7 @@ import 'package:finasstech/features/auth/domain/usecases/user_sign_in.dart';
 import 'package:finasstech/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:finasstech/features/budgeting/data/models/budget_model.dart';
 import 'package:finasstech/features/budgeting/domain/usecases/calculate_budget_usage.dart';
+import 'package:finasstech/features/budgeting/domain/usecases/get_all_budgets.dart';
 import 'package:finasstech/features/budgeting/presentation/bloc/budget_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -146,6 +147,7 @@ void _initBudget(Box<BudgetModel> budgetBox, Box transactionsBox) {
     ..registerFactory(() => CreateBudgetWithProphet(serviceLocator()))
     ..registerFactory(() => UpdateBudgetCategories(serviceLocator()))
     ..registerFactory(() => GetLatestBudget(serviceLocator()))
+    ..registerFactory(() => GetAllBudgets(serviceLocator()))
     ..registerLazySingleton(() => CalculateBudgetUsage(serviceLocator()))
     ..registerLazySingleton(
       () => BudgetBloc(
@@ -155,6 +157,7 @@ void _initBudget(Box<BudgetModel> budgetBox, Box transactionsBox) {
         updateBudgetCategories: serviceLocator(),
         getLatestBudget: serviceLocator(),
         calculateBudgetUsage: serviceLocator(),
+        getAllBudgets: serviceLocator(),
       ),
     );
 }

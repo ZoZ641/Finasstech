@@ -15,6 +15,7 @@ abstract interface class BudgetLocalDataSource {
     required Map<String, BudgetCategoryModel> categories,
   });
   Future<BudgetModel?> getLatestBudget();
+  Future<List<BudgetModel>> getAllBudgets();
   Future<void> calculateBudgetUsageFromExpenses();
   Future<Map<String, dynamic>> getTransactionsHistoryForProphet(String period);
 }
@@ -266,6 +267,18 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
     );
 
     await budgetBox.putAt(0, updatedBudget);
+  }
+
+  @override
+  Future<List<BudgetModel>> getAllBudgets() async {
+    try {
+      if (budgetBox.isEmpty) return [];
+      final budgets = budgetBox.values.toList();
+      budgets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return budgets;
+    } catch (e) {
+      throw ServerException('Failed to get budgets: ${e.toString()}');
+    }
   }
 }
 

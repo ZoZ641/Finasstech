@@ -80,6 +80,16 @@ class BudgetRepositoryImpl implements BudgetRepository {
   }
 
   @override
+  Future<Either<Failure, List<BudgetModel>>> getAllBudgets() async {
+    try {
+      final budgets = await hiveDataSource.getAllBudgets();
+      return Right(budgets);
+    } catch (e) {
+      return Left(Failure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> calculateBudgetUsage({
     required Budget budget,
   }) async {

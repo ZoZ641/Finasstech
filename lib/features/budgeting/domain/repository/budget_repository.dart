@@ -24,6 +24,9 @@ abstract interface class BudgetRepository {
   /// Fetch the latest (most recently updated) budget.
   Future<Either<Failure, Budget?>> getLatestBudget();
 
+  /// Get all budgets ordered by creation date (newest first)
+  Future<Either<Failure, List<Budget>>> getAllBudgets();
+
   /// Calculate how much of the budget is used in each category.
   Future<Either<Failure, void>> calculateBudgetUsage({required Budget budget});
 }

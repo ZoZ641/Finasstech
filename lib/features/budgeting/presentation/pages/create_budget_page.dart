@@ -13,7 +13,6 @@ import '../../domain/entities/budget.dart';
 import '../../domain/entities/budget_category.dart';
 import '../bloc/budget_bloc.dart';
 import '../widgets/budget_categories.dart';
-import '../widgets/budget_category_item.dart';
 import 'budget_dashboard.dart';
 
 class CreateBudgetPage extends StatefulWidget {
@@ -116,6 +115,16 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
             onSave: _saveCategories,
             onCategoryChanged: (key, updatedCategory) {
               setState(() => categories[key] = updatedCategory);
+            },
+            onCategoryAdded: (newCategory) {
+              setState(() {
+                categories[newCategory.name] = newCategory;
+              });
+            },
+            onCategoryDeleted: (key) {
+              setState(() {
+                categories.remove(key);
+              });
             },
           );
         }

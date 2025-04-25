@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-
 import '../../../../core/theme/app_pallete.dart';
-import '../../domain/entities/budget_category.dart';
+import '../../data/models/budget_category_model.dart';
 
-class BudgetCategoryItem extends StatefulWidget {
-  final BudgetCategory category;
+class BudgetCategoryItemCreate extends StatefulWidget {
+  final BudgetCategoryModel category;
   final double forecastedSales;
   final Function(double) onPercentageChanged;
   final Function(double) onAmountChanged;
-  const BudgetCategoryItem({
+  const BudgetCategoryItemCreate({
     super.key,
     required this.category,
     required this.forecastedSales,
@@ -17,10 +16,11 @@ class BudgetCategoryItem extends StatefulWidget {
   });
 
   @override
-  State<BudgetCategoryItem> createState() => _BudgetCategoryItemState();
+  State<BudgetCategoryItemCreate> createState() =>
+      _BudgetCategoryItemCreateState();
 }
 
-class _BudgetCategoryItemState extends State<BudgetCategoryItem> {
+class _BudgetCategoryItemCreateState extends State<BudgetCategoryItemCreate> {
   late TextEditingController _percentageController;
   late TextEditingController _amountController;
   bool _isPercentageEditing = false;
@@ -38,7 +38,7 @@ class _BudgetCategoryItemState extends State<BudgetCategoryItem> {
   }
 
   @override
-  void didUpdateWidget(covariant BudgetCategoryItem oldWidget) {
+  void didUpdateWidget(covariant BudgetCategoryItemCreate oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     // Only update if we're not currently editing
@@ -151,7 +151,7 @@ class _BudgetCategoryItemState extends State<BudgetCategoryItem> {
                       ),
                       decoration: const InputDecoration(
                         labelText: 'Amount',
-                        prefixText: '\$',
+                        prefixText: '£',
                         border: OutlineInputBorder(),
                       ),
                       onSubmitted: (_) => _handleAmountSubmit(),
@@ -168,6 +168,28 @@ class _BudgetCategoryItemState extends State<BudgetCategoryItem> {
                 backgroundColor: Colors.grey.shade200,
                 valueColor: AlwaysStoppedAnimation<Color>(statusColor),
               ),
+            if (widget.category.usage > 0) ...[
+              const SizedBox(height: 16),
+              LinearProgressIndicator(
+                value: widget.category.usage / widget.category.amount,
+                backgroundColor: Colors.grey[200],
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  widget.category.usage > widget.category.amount
+                      ? Colors.red
+                      : Colors.green,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Usage: £${widget.category.usage.toStringAsFixed(2)} / £${widget.category.amount.toStringAsFixed(2)}',
+                style: TextStyle(
+                  color:
+                      widget.category.usage > widget.category.amount
+                          ? Colors.red
+                          : Colors.green,
+                ),
+              ),
+            ],
           ],
         ),
       ),

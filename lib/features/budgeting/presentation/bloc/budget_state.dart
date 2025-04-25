@@ -43,6 +43,13 @@ final class BudgetLoaded extends BudgetState {
   const BudgetLoaded(this.budget);
 }
 
+/// State after all budgets have been loaded
+final class AllBudgetsLoaded extends BudgetState {
+  final List<Budget> budgets;
+
+  const AllBudgetsLoaded(this.budgets);
+}
+
 /// State after the budget categories have been updated
 final class BudgetUpdated extends BudgetState {
   final Budget budget;

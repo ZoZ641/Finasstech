@@ -8,6 +8,7 @@ import 'package:device_preview_plus/device_preview_plus.dart';
 import 'package:finasstech/features/auth/presentation/pages/signin_page.dart';
 import 'package:finasstech/features/budgeting/presentation/bloc/budget_bloc.dart';
 import 'package:finasstech/features/budgeting/presentation/pages/budget_page.dart';
+import 'package:finasstech/features/settings/presentaion/pages/settings_page.dart';
 
 import 'package:finasstech/features/dashboard/presentaion/pages/dashboard_page.dart';
 import 'package:finasstech/init_dependencies.dart';
@@ -73,36 +74,10 @@ class _MyAppState extends State<MyApp> {
           return CurvedNavBar(
             pages: [
               const ExpensePage(),
-
-              // Budget Page
               const BudgetPage(),
               const DashboardPage(),
               const AiInsightsPage(),
-
-              // Settings Page
-              Center(
-                child: BlocConsumer<AuthBloc, AuthState>(
-                  listener: (context, state) {
-                    if (state is AuthFailure) {
-                      showSnackBar(
-                        context,
-                        'error',
-                        state.message,
-                        ContentType.failure,
-                      );
-                    }
-                  },
-                  builder: (context, state) {
-                    if (state is AuthLoading) {
-                      return const Loader();
-                    }
-                    return GestureDetector(
-                      onTap: () => context.read<AuthBloc>().add(AuthSignOut()),
-                      child: const Text('Settings'),
-                    );
-                  },
-                ),
-              ),
+              const SettingsPage(),
             ],
             onPageChanged: updatePage,
           );

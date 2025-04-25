@@ -38,6 +38,11 @@ final class GetLatestBudgetEvent extends BudgetEvent {
   const GetLatestBudgetEvent();
 }
 
+/// Loads all budgets from local storage
+final class GetAllBudgetsEvent extends BudgetEvent {
+  const GetAllBudgetsEvent();
+}
+
 /// Recalculates category usage based on recorded expenses
 final class CalculateBudgetUsageEvent extends BudgetEvent {
   final Budget budget;
