@@ -163,25 +163,24 @@ class ExpenseCard extends StatelessWidget {
         elevation: 2,
         child: ListTile(
           onTap: () => _editExpense(context),
-          leading: const Icon(Icons.attach_money),
-          title: Text(expense.vendor),
+          leading: const Icon(Icons.currency_pound_sharp),
+          title: Text(
+            "£${expense.amount.toStringAsFixed(2)}",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: expense.amount < 0 ? Colors.red : AppPallete.primaryColor,
+            ),
+          ),
           subtitle: Text(expense.category),
           trailing: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                "£${expense.amount.toStringAsFixed(2)}",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color:
-                      expense.amount < 0 ? Colors.red : AppPallete.primaryColor,
-                ),
+                DateFormat('dd-MM-yyyy').format(expense.date),
+                style: const TextStyle(fontSize: 14),
               ),
-              Text(
-                DateFormat('yyyy-MM-dd').format(expense.date),
-                style: const TextStyle(fontSize: 12),
-              ),
+              Text(expense.vendor, style: TextStyle(fontSize: 14)),
             ],
           ),
         ),

@@ -223,7 +223,7 @@ class _GraphWidgetState extends State<GraphWidget> {
 
   @override
   Widget build(BuildContext context) {
-    print('expense data $_displayData');
+    // print('expense data $_displayData');
     return Card.outlined(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Padding(

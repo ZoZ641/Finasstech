@@ -92,10 +92,6 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
               } else if (state is DashboardLoaded) {
                 return ListView(
                   children: [
-                    ElevatedButton(
-                      onPressed: () {},
-                      child: Text('send notification'),
-                    ),
                     GraphWidget(
                       title: 'Income',
                       amount: state.income.toStringAsFixed(0),
@@ -116,23 +112,6 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
                       data: state.cashFlowData,
                       initialTimePeriod: state.cashFlowPeriod,
                       onTimePeriodChanged: _handleCashFlowTimePeriodChanged,
-                    ),
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 20),
-                      child: const Divider(
-                        thickness: 2,
-                        color: Color(0xFF3f5043),
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Text(
-                        'Budget Watch',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
                     ),
                   ],
                 );
