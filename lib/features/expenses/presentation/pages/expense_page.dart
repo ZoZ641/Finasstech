@@ -172,15 +172,53 @@ class ExpenseCard extends StatelessWidget {
               color: expense.amount < 0 ? Colors.red : AppPallete.primaryColor,
             ),
           ),
-          subtitle: Text(expense.category),
+          subtitle: Text(
+            expense.category[0].toUpperCase() + expense.category.substring(1),
+          ),
           trailing: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 DateFormat('dd-MM-yyyy').format(expense.date),
                 style: const TextStyle(fontSize: 14),
               ),
-              Text(expense.vendor, style: TextStyle(fontSize: 14)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.min, // Important to wrap content
+                children: [
+                  //TODO: decide if you still want this
+                  /* if (expense.recurrence > 0)
+                    Container(
+                      padding: EdgeInsets.symmetric(vertical: 3, horizontal: 5),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: AppPallete.primaryColor.withAlpha(230),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.refresh, size: 16.0),
+                          Text(
+                            expense.recurrence == 1 ? 'Weekly' : 'Monthly',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),*/
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8.0, 0, 0, 0),
+                    child: Text(
+                      expense.vendor[0].toUpperCase() +
+                          expense.vendor.substring(1),
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
