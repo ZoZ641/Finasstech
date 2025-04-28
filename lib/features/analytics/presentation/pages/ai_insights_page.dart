@@ -1,134 +1,119 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class AiInsightsPage extends StatelessWidget {
+import '../bloc/gemini_bloc.dart';
+import '../widgets/chat_message.dart';
+import '../widgets/thinker_indicator.dart';
+
+class AiInsightsPage extends StatefulWidget {
   const AiInsightsPage({super.key});
+
+  @override
+  State<AiInsightsPage> createState() => _AiInsightsPageState();
+}
+
+class _AiInsightsPageState extends State<AiInsightsPage> {
+  final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final List<ChatMessage> _messages = [];
+  bool _isThinking = false;
+
+  void _sendMessage() {
+    final message = _messageController.text.trim();
+    if (message.isNotEmpty) {
+      BlocProvider.of<GeminiBloc>(context).add(SendMessage(message: message));
+      setState(() {
+        _messages.add(ChatMessage(text: message, isUser: true));
+        _messageController.clear();
+        _isThinking = true;
+      });
+
+      // Scroll to show the thinking indicator
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        /*leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),*/
-        title: const Text('AI Insights'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ListView(
-          children: [
-            //TODO Add graph widget
-            /*GraphWidget(
-              title: 'Account Balance',
-              duration: 'Last 30 Days',
-              amount: '15,000',
-            ),*/
-            // Account Balance Section
-            const Text(
-              "Account Balance",
-              style: TextStyle(color: Colors.white, fontSize: 16),
+      appBar: AppBar(title: const Text('AI Financial Insights')),
+      body: Column(
+        children: [
+          Expanded(
+            child: BlocConsumer<GeminiBloc, GeminiState>(
+              listener: (context, state) {
+                if (state is GeminiResponse) {
+                  setState(() {
+                    _isThinking = false;
+                    _messages.add(
+                      ChatMessage(text: state.message, isUser: false),
+                    );
+                  });
+                  // Scroll to the latest message
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_scrollController.hasClients) {
+                      _scrollController.animateTo(
+                        _scrollController.position.maxScrollExtent,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  });
+                } else if (state is GeminiError) {
+                  setState(() {
+                    _isThinking = false;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: ${state.message}')),
+                  );
+                } else if (state is GeminiLoading) {
+                  setState(() {
+                    _isThinking = true;
+                  });
+                }
+              },
+              builder: (context, state) {
+                return ListView(
+                  controller: _scrollController,
+                  children: [
+                    ...List.generate(
+                      _messages.length,
+                      (index) => ChatBubble(message: _messages[index]),
+                    ),
+                    if (_isThinking) const ThinkingIndicator(),
+                  ],
+                );
+              },
             ),
-            const SizedBox(height: 8),
-            const Text(
-              "\$15,000",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const Text(
-              "Last 30 Days +12%",
-              style: TextStyle(color: Colors.green, fontSize: 14),
-            ),
-            const SizedBox(height: 20),
-
-            // How does this work? Section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
               children: [
-                const Text(
-                  "How does this work?",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: const InputDecoration(
+                      hintText: 'Ask me anything...',
+                    ),
+                    onSubmitted: (_) => _sendMessage(),
+                  ),
                 ),
+                const SizedBox(width: 8.0),
                 IconButton(
-                  icon: const Icon(Icons.check_circle, color: Colors.white),
-                  onPressed: () {
-                    //TODO Explanation logic
-                  },
+                  icon: const Icon(Icons.send),
+                  onPressed: _sendMessage,
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-
-            // Search Box
-            TextField(
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                filled: true,
-                hintText: "Search for a scenario",
-                hintStyle: const TextStyle(color: Colors.grey),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Popular Scenarios Section
-            const Text(
-              "Popular Scenarios",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            // Scenario List
-            _buildScenarioItem("Hire 2 staff", 3500),
-            _buildScenarioItem("Launch new product", 5000),
-            _buildScenarioItem("Buy equipment", 1500),
-
-            const SizedBox(height: 20),
-
-            // Chat Input Field
-            const TextField(
-              style: TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                hintText: "Type your message here...",
-                hintStyle: TextStyle(color: Colors.grey),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildScenarioItem(String title, double cost) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-              ),
-              Text(
-                "Total cost: \$${cost.toStringAsFixed(0)}",
-                style: const TextStyle(color: Colors.grey),
-              ),
-            ],
-          ),
-          OutlinedButton(
-            onPressed: () {
-              //TODO Add to forecast logic
-            },
-            child: const Text("Add to forecast"),
           ),
         ],
       ),

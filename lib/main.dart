@@ -19,13 +19,13 @@ import 'core/common/widgets/loader.dart';
 import 'core/services/notification_service.dart';
 import 'core/utils/show_snackbar.dart';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
+import 'features/analytics/presentation/bloc/gemini_bloc.dart';
 import 'features/dashboard/presentaion/bloc/dashboard_bloc.dart';
 import 'features/expenses/presentation/bloc/expense_bloc.dart';
 import 'features/expenses/presentation/pages/expense_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  NotificationService().initNotification();
   await initDependencies();
   runApp(
     MultiBlocProvider(
@@ -35,6 +35,7 @@ void main() async {
         BlocProvider(create: (_) => serviceLocator<BudgetBloc>()),
         BlocProvider(create: (_) => serviceLocator<ExpenseBloc>()),
         BlocProvider(create: (_) => serviceLocator<DashboardBloc>()),
+        BlocProvider(create: (_) => serviceLocator<GeminiBloc>()),
       ],
       child: DevicePreview(enabled: false, builder: (context) => const MyApp()),
     ),

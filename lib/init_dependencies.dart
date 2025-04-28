@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:finasstech/core/common/cubits/app_user/app_user_cubit.dart';
+import 'package:finasstech/core/services/notification_service.dart';
 import 'package:finasstech/features/auth/data/datasources/auth_firebase_data_source.dart';
 import 'package:finasstech/features/auth/data/repository/auth_repository_impl.dart';
 import 'package:finasstech/features/auth/domain/repository/auth_repository.dart';
@@ -13,10 +14,13 @@ import 'package:finasstech/features/budgeting/domain/usecases/get_all_budgets.da
 import 'package:finasstech/features/budgeting/presentation/bloc/budget_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_ce_flutter/adapters.dart';
 import 'package:path_provider/path_provider.dart';
+import 'core/services/gemini_service.dart';
+import 'features/analytics/presentation/bloc/gemini_bloc.dart';
 import 'features/auth/domain/usecases/user_sign_out.dart';
 import 'features/budgeting/data/datasources/budget_local_data_source.dart';
 import 'features/budgeting/data/repository/budget_repository_impl.dart';
@@ -59,6 +63,7 @@ Future<void> initDependencies() async {
   //print(budgetBox.keys);
   //print(budgetBox.get('budget_1745180924854')?.toMap());
   final expensesBox = await Hive.openBox<ExpenseModel>('expenses');
+  //print('expense keys ${expensesBox.keys}');
   //print(expensesBox.get('10c9e1df-e6e4-4069-8ba0-61bb9ab6997c')?.date);
   /*print(
     'isBefore ${DateTime(DateTime.now().month + 1)} && isAfter ${DateTime(DateTime.now().month - 1)}',
@@ -89,6 +94,8 @@ Future<void> initDependencies() async {
   //expensesBox.clear();
   // final budget = budgetBox.values.toList();
   // print(budget);
+  //DotEnv initialize
+  await dotenv.load(fileName: ".env");
   //auth feature dependencies
   _initAuth();
 
@@ -97,6 +104,19 @@ Future<void> initDependencies() async {
 
   _initExpense(expensesBox);
   _initDashboard();
+
+  _initGemini();
+
+  /* Services */
+  // Register GeminiService
+  serviceLocator.registerLazySingleton(
+    () => GeminiService(dotenv.env['GeminiAPIKey']!),
+  );
+
+  // Register NotificationService
+  serviceLocator.registerLazySingleton(
+    () => NotificationService().initNotification(),
+  );
 
   /* Firebase setup  */
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -190,4 +210,8 @@ void _initDashboard() {
   serviceLocator.registerLazySingleton(
     () => DashboardBloc(getAllExpenses: serviceLocator()),
   );
+}
+
+void _initGemini() {
+  serviceLocator.registerLazySingleton(() => GeminiBloc(serviceLocator()));
 }
