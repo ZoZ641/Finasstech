@@ -52,7 +52,7 @@ class _ThinkingIndicatorState extends State<ThinkingIndicator>
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'Gemini is thinking',
+                'Finasstech is thinking',
                 style: TextStyle(
                   color: Colors.black87,
                   fontWeight: FontWeight.w500,
