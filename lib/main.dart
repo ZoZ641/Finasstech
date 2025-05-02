@@ -1,6 +1,7 @@
 import 'package:finasstech/core/common/cubits/app_user/app_user_cubit.dart';
 import 'package:finasstech/core/theme/theme.dart';
 import 'package:finasstech/core/utils/navbar/curved_nav_bar.dart';
+import 'package:finasstech/features/expenses/presentation/bloc/expense_bloc.dart';
 
 import 'package:finasstech/features/analytics/presentation/pages/ai_insights_page.dart';
 import 'package:finasstech/features/auth/presentation/bloc/auth_bloc.dart';
@@ -15,13 +16,9 @@ import 'package:finasstech/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'core/common/widgets/loader.dart';
 import 'core/services/notification_service.dart';
-import 'core/utils/show_snackbar.dart';
-import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'features/analytics/presentation/bloc/gemini_bloc.dart';
 import 'features/dashboard/presentaion/bloc/dashboard_bloc.dart';
-import 'features/expenses/presentation/bloc/expense_bloc.dart';
 import 'features/expenses/presentation/pages/expense_page.dart';
 
 void main() async {
@@ -51,6 +48,14 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   int currentPage = 0;
+  final NotificationService _notificationService = NotificationService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize notification service
+    _notificationService.initNotification();
+  }
 
   void updatePage(int index) {
     setState(() {
@@ -60,12 +65,16 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Request permissions when the app is built and the context is available
+    _notificationService.requestPermissions(context);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       locale: DevicePreview.locale(context),
       builder: DevicePreview.appBuilder,
       title: 'FinassTech',
-      theme: AppTheme.lightThemeMode,
+      themeMode: ThemeMode.dark,
+      //theme: AppTheme.lightThemeMode,
       darkTheme: AppTheme.darkThemeMode,
       home: BlocSelector<AppUserCubit, AppUserState, bool>(
         selector: (state) => state is AppUserAuthenticated,

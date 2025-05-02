@@ -2,6 +2,7 @@ import 'package:finasstech/core/utils/money_formater.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import 'package:finasstech/core/services/notification_service.dart';
 
 import '../../../budgeting/presentation/bloc/budget_bloc.dart';
 import '../../domain/entities/expense.dart';
@@ -9,8 +10,15 @@ import '../bloc/expense_bloc.dart';
 
 class AddExpensePage extends StatefulWidget {
   final Expense? editingExpense;
+  final String? expenseId;
+  final bool? isRecurring;
 
-  const AddExpensePage({super.key, this.editingExpense});
+  const AddExpensePage({
+    super.key,
+    this.editingExpense,
+    this.expenseId,
+    this.isRecurring = false,
+  });
 
   @override
   State<AddExpensePage> createState() => _AddExpensePageState();
@@ -20,6 +28,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _vendorController = TextEditingController();
+  final NotificationService _notificationService = NotificationService();
 
   DateTime? _selectedDate;
   String? _selectedCategory;
@@ -55,6 +64,27 @@ class _AddExpensePageState extends State<AddExpensePage> {
     }
   }
 
+  Future<void> _scheduleRecurringNotification(Expense expense) async {
+    if (expense.recurrence == 0) return;
+
+    final notificationId = _notificationService
+        .generateNotificationIdFromUuidPartial(expense.id);
+    final title = 'Recurring Expense';
+    final body =
+        'Hey you have a recurring ${expense.category} expense of £${expense.amount.toStringAsFixed(2)} to ${expense.vendor[0] + expense.vendor.substring(1).toLowerCase()}';
+
+    await _notificationService.showScheduleNotification(
+      id: notificationId,
+      title: title,
+      body: body,
+      dateTime:
+          expense.recurrence == 1
+              ? expense.date.add(const Duration(days: 7))
+              : expense.date.add(const Duration(days: 30)),
+      isMonthly: expense.recurrence == 2,
+    );
+  }
+
   void _saveExpense() {
     if (_formKey.currentState!.validate() &&
         _selectedDate != null &&
@@ -76,6 +106,9 @@ class _AddExpensePageState extends State<AddExpensePage> {
         context.read<ExpenseBloc>().add(AddExpenseEvent(expense));
       }
 
+      // Schedule notification for recurring expenses
+      _scheduleRecurringNotification(expense);
+
       // Always recalculate budget after expense changes
       final budget = context.read<BudgetBloc>().budget;
       if (budget != null) {
@@ -91,6 +124,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.editingExpense != null;
+    final isRecurring = widget.isRecurring ?? false;
 
     return Scaffold(
       appBar: AppBar(title: Text(isEditing ? "Edit Expense" : "Add Expense")),
@@ -105,6 +139,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                 TextFormField(
                   controller: _amountController,
                   keyboardType: TextInputType.number,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   inputFormatters: [MoneyInputFormatter()],
                   decoration: const InputDecoration(
                     labelText: "Amount",
@@ -127,7 +162,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
                     text:
                         _selectedDate == null
                             ? "Select a date"
-                            : "${_selectedDate!.toLocal()}".split(' ')[0],
+                            : "${_selectedDate!.day}-${_selectedDate!.month}-${_selectedDate!.year}"
+                                .split(' ')[0],
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -135,6 +171,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                 // Vendor Field
                 TextFormField(
                   controller: _vendorController,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: const InputDecoration(
                     labelText: "Vendor",
                     suffixIcon: Icon(Icons.store),
@@ -217,7 +254,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _saveExpense,
-                    child: Text(isEditing ? "Update" : "Add"),
+                    child: Text(isEditing && !isRecurring ? "Update" : "Add"),
                   ),
                 ),
               ],

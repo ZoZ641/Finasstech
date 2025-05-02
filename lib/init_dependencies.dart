@@ -114,8 +114,8 @@ Future<void> initDependencies() async {
   );
 
   // Register NotificationService
-  serviceLocator.registerLazySingleton(
-    () => NotificationService().initNotification(),
+  serviceLocator.registerLazySingleton<NotificationService>(
+    () => NotificationService(),
   );
 
   /* Firebase setup  */

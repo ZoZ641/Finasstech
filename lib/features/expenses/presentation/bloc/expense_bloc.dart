@@ -7,6 +7,7 @@ import '../../domain/usecases/add_expense.dart';
 import '../../domain/usecases/delete_expense.dart';
 import '../../domain/usecases/get_all_expenses.dart';
 import '../../domain/usecases/update_expense.dart';
+import '../../../../core/services/notification_service.dart';
 
 part 'expense_event.dart';
 part 'expense_state.dart';
@@ -16,6 +17,7 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
   final UpdateExpense updateExpense;
   final DeleteExpense deleteExpense;
   final GetAllExpenses getAllExpenses;
+  final NotificationService _notificationService = NotificationService();
 
   ExpenseBloc({
     required this.addExpense,
@@ -29,10 +31,10 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
     on<DeleteExpenseEvent>(_onDeleteExpense);
   }
 
-/// Handles [LoadExpenses] event by retrieving all expenses from the repository.
-/// Emits an [ExpenseLoading] state initially. If the retrieval is successful,
-/// it emits an [ExpenseLoaded] state with the list of expenses. If the operation
-/// fails, it emits an [ExpenseFailure] state with the error message.
+  /// Handles [LoadExpenses] event by retrieving all expenses from the repository.
+  /// Emits an [ExpenseLoading] state initially. If the retrieval is successful,
+  /// it emits an [ExpenseLoaded] state with the list of expenses. If the operation
+  /// fails, it emits an [ExpenseFailure] state with the error message.
 
   Future<void> _onLoadExpenses(
     LoadExpenses event,
@@ -114,9 +116,14 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
   ) async {
     emit(ExpenseLoading());
     final result = await deleteExpense(event.id);
-    result.fold(
-      (failure) => emit(ExpenseFailure(failure.message)),
-      (_) => add(LoadExpenses()),
-    );
+    result.fold((failure) => emit(ExpenseFailure(failure.message)), (_) {
+      // Cancel the notification for this expense
+      _notificationService.cancelNotification(
+        id: _notificationService.generateNotificationIdFromUuidPartial(
+          event.id,
+        ),
+      );
+      add(LoadExpenses());
+    });
   }
 }

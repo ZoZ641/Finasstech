@@ -43,7 +43,15 @@ class _ExpensePageState extends State<ExpensePage> {
                 if (grouped['later']!.isNotEmpty)
                   _buildSection("Later", grouped['later']!),
                 if (grouped.values.every((list) => list.isEmpty))
-                  const Center(child: Text("No expenses recorded.")),
+                  const Center(
+                    child: Text(
+                      "No expenses recorded.",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
               ],
             );
           } else if (state is ExpenseFailure) {
@@ -72,9 +80,24 @@ class _ExpensePageState extends State<ExpensePage> {
 
   Map<String, List<Expense>> _groupExpenses(List<Expense> expenses) {
     final now = DateTime.now();
-    final thisWeekStart = now.subtract(Duration(days: now.weekday - 1));
-    final thisMonthStart = DateTime(now.year, now.month);
-    final thisYearStart = DateTime(now.year);
+
+    // Week starts on Saturday (weekday 6 in Dart)
+    // Find the most recent Saturday (including today if it's Saturday)
+    final int daysToSubtract = now.weekday == 6 ? 0 : (now.weekday + 1) % 7;
+    final thisWeekStart = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: daysToSubtract));
+
+    // Month starts at first day of current month
+    final thisMonthStart = DateTime(now.year, now.month, 1);
+
+    // Year starts at first day of current year
+    final thisYearStart = DateTime(now.year, 1, 1);
+
+    // Later is anything before this year
+    final laterCutoff = DateTime(now.year, 1, 1);
 
     final Map<String, List<Expense>> result = {
       'thisWeek': [],
@@ -84,9 +107,12 @@ class _ExpensePageState extends State<ExpensePage> {
     };
 
     for (var expense in expenses) {
-      if (expense.date.isAfter(thisYearStart)) {
-        if (expense.date.isAfter(thisMonthStart)) {
-          if (expense.date.isAfter(thisWeekStart)) {
+      if (expense.date.isAfter(thisYearStart) ||
+          isSameDay(expense.date, thisYearStart)) {
+        if (expense.date.isAfter(thisMonthStart) ||
+            isSameDay(expense.date, thisMonthStart)) {
+          if (expense.date.isAfter(thisWeekStart) ||
+              isSameDay(expense.date, thisWeekStart)) {
             result['thisWeek']!.add(expense);
           } else {
             result['thisMonth']!.add(expense);
@@ -99,7 +125,18 @@ class _ExpensePageState extends State<ExpensePage> {
       }
     }
 
+    // Sort each group from newest to oldest
+    result['thisWeek']!.sort((a, b) => b.date.compareTo(a.date));
+    result['thisMonth']!.sort((a, b) => b.date.compareTo(a.date));
+    result['thisYear']!.sort((a, b) => b.date.compareTo(a.date));
+    result['later']!.sort((a, b) => b.date.compareTo(a.date));
+
     return result;
+  }
+
+  // Helper function to check if two dates are the same day
+  bool isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 }
 
@@ -150,7 +187,7 @@ class ExpenseCard extends StatelessWidget {
       key: Key(expense.id),
       direction: DismissDirection.endToStart,
       background: Container(
-        color: Colors.red,
+        color: AppPallete.errorColor,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: const Icon(Icons.delete, color: Colors.white),
@@ -169,7 +206,10 @@ class ExpenseCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: expense.amount < 0 ? Colors.red : AppPallete.primaryColor,
+              color:
+                  expense.amount < 0
+                      ? AppPallete.errorColor
+                      : AppPallete.primaryColor,
             ),
           ),
           subtitle: Text(
@@ -188,7 +228,7 @@ class ExpenseCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min, // Important to wrap content
                 children: [
                   //TODO: decide if you still want this
-                  /* if (expense.recurrence > 0)
+                  if (expense.recurrence > 0)
                     Container(
                       padding: EdgeInsets.symmetric(vertical: 3, horizontal: 5),
                       decoration: BoxDecoration(
@@ -208,7 +248,7 @@ class ExpenseCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                    ),*/
+                    ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(8.0, 0, 0, 0),
                     child: Text(
