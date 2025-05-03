@@ -1,3 +1,4 @@
+import 'package:finasstech/core/services/notification_service.dart';
 import 'package:finasstech/features/dashboard/presentaion/widgets/graph_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -77,8 +78,11 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
                 context,
                 MaterialPageRoute(builder: (context) => AddExpensePage()),
               ).then((_) {
-                // Recalculate dashboard metrics when returning from adding expense
-                context.read<DashboardBloc>().add(CalculateDashboardMetrics());
+                if (mounted) {
+                  context.read<DashboardBloc>().add(
+                    CalculateDashboardMetrics(),
+                  );
+                }
               });
             },
             child: const Icon(Icons.add),
@@ -90,27 +94,57 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
               } else if (state is DashboardFailure) {
                 return Center(child: Text(state.message));
               } else if (state is DashboardLoaded) {
+                print('expense data ${state.expensesData}');
                 return ListView(
                   children: [
+                    // ElevatedButton(
+                    //   onPressed: () {
+                    //     NotificationService().showScheduleNotification(
+                    //       id: 3,
+                    //       title: "Test",
+                    //       body: "test schedule notification",
+                    //       dateTime: DateTime(2025, DateTime.may, 2, 3, 12),
+                    //     );
+                    //     /*showDialog(
+                    //       context: context,
+                    //       builder:
+                    //           (context) => AlertDialog(
+                    //             title: Text("test"),
+                    //             content: Text('test content'),
+                    //             actions: [
+                    //               TextButton(
+                    //                 onPressed: () => Navigator.pop(context),
+                    //                 child: const Text('Later'),
+                    //               ),
+                    //               TextButton(
+                    //                 onPressed: () => Navigator.pop(context),
+                    //                 child: const Text('Not later'),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //     );*/
+                    //   },
+                    //   child: Text('Show Dialogue'),
+                    // ),
                     GraphWidget(
                       title: 'Income',
                       amount: state.income.toStringAsFixed(0),
                       isGraph: false,
-                      initialTimePeriod: state.incomePeriod,
+                      //initialTimePeriod: state.incomePeriod,
                       onTimePeriodChanged: _handleIncomeTimePeriodChanged,
                     ),
                     GraphWidget(
                       title: 'Expenses',
-                      amount: state.expenses.toStringAsFixed(0),
+                      amount: (state.expenses * -1).toStringAsFixed(0),
                       data: state.expensesData,
-                      initialTimePeriod: state.expensesPeriod,
+                      //initialTimePeriod: state.expensesPeriod,
                       onTimePeriodChanged: _handleExpensesTimePeriodChanged,
                     ),
                     GraphWidget(
                       title: 'Cash Flow',
                       amount: state.cashFlow.toStringAsFixed(0),
                       data: state.cashFlowData,
-                      initialTimePeriod: state.cashFlowPeriod,
+                      //initialTimePeriod: state.cashFlowPeriod,
                       onTimePeriodChanged: _handleCashFlowTimePeriodChanged,
                     ),
                   ],

@@ -3,9 +3,8 @@ import 'dart:math';
 import 'package:finasstech/core/theme/app_pallete.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
-enum TimePeriod { week, month, quarter, year, custom }
+enum TimePeriod { week, month, quarter, year }
 
 class GraphWidget extends StatefulWidget {
   final bool isGraph;
@@ -42,103 +41,49 @@ class _GraphWidgetState extends State<GraphWidget> {
     _displayData = widget.data ?? _generatePlaceholderData(_selectedPeriod);
   }
 
-  List<FlSpot> _generatePlaceholderData(TimePeriod period) {
-    // This would ideally come from your data repository
-    switch (period) {
-      case TimePeriod.week:
-        return [
-          FlSpot(0, 0),
-          FlSpot(1, -252),
-          FlSpot(2, -36),
-          FlSpot(3, 272),
-          FlSpot(4, 360),
-          FlSpot(5, 33),
-          FlSpot(6, -90),
-        ];
-      case TimePeriod.month:
-        return [
-          FlSpot(0, 0),
-          FlSpot(1, -252),
-          FlSpot(2, -36),
-          FlSpot(3, 272),
-          FlSpot(4, 360),
-          FlSpot(5, 33),
-          FlSpot(6, -90),
-          FlSpot(7, -252),
-          FlSpot(8, -237),
-          FlSpot(9, -327),
-          FlSpot(10, 296),
-          FlSpot(11, -38),
-          FlSpot(12, -441),
-          FlSpot(13, 166),
-          FlSpot(14, -486),
-          FlSpot(15, -39),
-          FlSpot(16, 327),
-          FlSpot(17, -328),
-          FlSpot(18, 256),
-          FlSpot(19, 78),
-          FlSpot(20, -436),
-          FlSpot(21, 96),
-          FlSpot(22, -215),
-          FlSpot(23, 348),
-          FlSpot(24, 30),
-          FlSpot(25, -151),
-          FlSpot(26, -50),
-          FlSpot(27, -227),
-        ];
-      case TimePeriod.quarter:
-        // 3 months data (12 weeks)
-        return List.generate(
-          12,
-          (index) =>
-              FlSpot(index.toDouble(), (200 * (index % 4 - 1.5)).toDouble()),
-        );
-      case TimePeriod.year:
-        // 12 months data
-        return List.generate(
-          12,
-          (index) => FlSpot(
-            index.toDouble(),
-            (400 * sin((index / 3) % 6.28318)).toDouble(),
-          ),
-        );
-      case TimePeriod.custom:
-        // Default to monthly data for custom range
-        return _generatePlaceholderData(TimePeriod.month);
+  @override
+  void didUpdateWidget(GraphWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update display data if it changes
+    if (widget.data != null && widget.data != oldWidget.data) {
+      setState(() {
+        _displayData = widget.data!;
+      });
     }
   }
 
-  LinearGradient _generateGradient({
-    required Color positiveColor,
-    required Color negativeColor,
-    required List<FlSpot> xyCord,
-    required bool isLine,
-  }) {
-    List<Color> colors = [];
-    List<double> stops = [];
-
-    for (int i = 0; i < xyCord.length; i++) {
-      double stop = i / (xyCord.length - 1);
-      stops.add(stop);
-
-      if (xyCord[i].y >= 0) {
-        colors.add(positiveColor);
-      } else {
-        colors.add(negativeColor);
-      }
+  List<FlSpot> _generatePlaceholderData(TimePeriod period) {
+    // Generate placeholder data with the correct number of points for each period
+    switch (period) {
+      case TimePeriod.week:
+        // 7 data points for a week
+        return List.generate(
+          7,
+          (index) =>
+              FlSpot(index.toDouble(), (Random().nextDouble() * 500).abs()),
+        );
+      case TimePeriod.month:
+        // 4 data points for a month (4 weeks)
+        return List.generate(
+          4,
+          (index) =>
+              FlSpot(index.toDouble(), (Random().nextDouble() * 500).abs()),
+        );
+      case TimePeriod.quarter:
+        // 3 data points for a quarter (3 months)
+        return List.generate(
+          3,
+          (index) =>
+              FlSpot(index.toDouble(), (Random().nextDouble() * 500).abs()),
+        );
+      case TimePeriod.year:
+        // 4 data points for a year (4 quarters)
+        return List.generate(
+          4,
+          (index) =>
+              FlSpot(index.toDouble(), (Random().nextDouble() * 500).abs()),
+        );
     }
-
-    if (!isLine) {
-      colors.add(Colors.transparent);
-      stops.add(1.0);
-    }
-
-    return LinearGradient(
-      colors: colors,
-      stops: stops,
-      begin: isLine ? Alignment.centerLeft : Alignment.topCenter,
-      end: isLine ? Alignment.centerRight : Alignment.bottomCenter,
-    );
   }
 
   String _getPeriodLabel(TimePeriod period) {
@@ -151,23 +96,27 @@ class _GraphWidgetState extends State<GraphWidget> {
         return 'This quarter';
       case TimePeriod.year:
         return 'This year';
-      case TimePeriod.custom:
-        return 'Custom period';
     }
   }
 
   String _getBottomTitleText(double value, TimePeriod period) {
+    // Only show label for integer values
+    if (value != value.toInt()) return '';
     switch (period) {
       case TimePeriod.week:
-        // For week view, show days (0-6)
-        final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        final day = value.toInt() % 7;
-        return value.toInt() % 2 == 0 ? weekdays[day] : '';
+        const weekdays = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+        if (value.toInt() >= 0 && value.toInt() < 7) {
+          return weekdays[value.toInt()];
+        }
+        return '';
       case TimePeriod.month:
-        // For month view, show week numbers
-        return value.toInt() % 7 == 0 ? 'W${(value / 7).ceil()}' : '';
+        if (value.toInt() >= 0 && value.toInt() < 4) {
+          return 'W${value.toInt() + 1}';
+        }
+        return '';
       case TimePeriod.quarter:
-        // For quarter, show month abbreviations
+        final now = DateTime.now();
+        final quarterStartMonth = ((now.month - 1) ~/ 3) * 3 + 1;
         final months = [
           'Jan',
           'Feb',
@@ -182,29 +131,15 @@ class _GraphWidgetState extends State<GraphWidget> {
           'Nov',
           'Dec',
         ];
-        return value.toInt() % 4 == 0
-            ? months[(value.toInt() / 4).floor() % 12]
-            : '';
+        if (value.toInt() >= 0 && value.toInt() < 3) {
+          return months[quarterStartMonth - 1 + value.toInt()];
+        }
+        return '';
       case TimePeriod.year:
-        // For year view, show month abbreviations
-        final months = [
-          'Jan',
-          'Feb',
-          'Mar',
-          'Apr',
-          'May',
-          'Jun',
-          'Jul',
-          'Aug',
-          'Sep',
-          'Oct',
-          'Nov',
-          'Dec',
-        ];
-        return months[value.toInt() % 12];
-      case TimePeriod.custom:
-        // For custom, adapt based on range
-        return value.toInt().toString();
+        if (value.toInt() >= 0 && value.toInt() < 4) {
+          return 'Q${value.toInt() + 1}';
+        }
+        return '';
     }
   }
 
@@ -212,7 +147,7 @@ class _GraphWidgetState extends State<GraphWidget> {
     if (newPeriod != null && newPeriod != _selectedPeriod) {
       setState(() {
         _selectedPeriod = newPeriod;
-        _displayData = _generatePlaceholderData(newPeriod);
+        _displayData = widget.data ?? _generatePlaceholderData(newPeriod);
       });
 
       if (widget.onTimePeriodChanged != null) {
@@ -223,7 +158,10 @@ class _GraphWidgetState extends State<GraphWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // print('expense data $_displayData');
+    // Debug logging for data points
+    print('Period: $_selectedPeriod, Data points: ${_displayData.length}');
+    print('Data: $_displayData');
+
     return Card.outlined(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Padding(
@@ -270,74 +208,84 @@ class _GraphWidgetState extends State<GraphWidget> {
               visible: widget.isGraph,
               child: SizedBox(
                 height: 200,
-                child: LineChart(
-                  LineChartData(
-                    gridData: const FlGridData(show: false),
+                child: BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceEvenly,
+                    gridData: FlGridData(show: false),
+                    //maxY: _getMaxY(),
+                    //minY: _getMinY(),
                     titlesData: FlTitlesData(
-                      leftTitles: const AxisTitles(
+                      show: true,
+                      rightTitles: AxisTitles(
                         sideTitles: SideTitles(showTitles: false),
                       ),
-                      rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: false,
-                          reservedSize: 37,
-                        ),
+                      topTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
                       ),
-                      topTitles: const AxisTitles(
+                      leftTitles: AxisTitles(
                         sideTitles: SideTitles(showTitles: false),
                       ),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 30,
                           getTitlesWidget: (value, meta) {
-                            // Only show labels at specific intervals to avoid overcrowding
+                            if (value.toInt() < 0 ||
+                                (value.toInt() >= _displayData.length) ||
+                                value != value.floorToDouble()) {
+                              return const SizedBox();
+                            }
                             final label = _getBottomTitleText(
                               value,
                               _selectedPeriod,
                             );
-                            return label.isEmpty
-                                ? const SizedBox.shrink()
-                                : Text(
-                                  label,
-                                  style: const TextStyle(
-                                    color: Color(0xFFa1b5a5),
-                                    fontSize: 10,
-                                  ),
-                                );
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                label,
+                                style: const TextStyle(
+                                  color: Color(0xFFa1b5a5),
+                                  fontSize: 10,
+                                ),
+                              ),
+                            );
                           },
                         ),
                       ),
                     ),
                     borderData: FlBorderData(show: false),
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: _displayData,
-                        isCurved: true,
-                        color: Colors.green,
-                        /*gradient: _generateGradient(
-                          xyCord: _displayData,
-                          positiveColor: AppPallete.primaryColor,
-                          negativeColor: AppPallete.inputFieldErrorColor,
-                          isLine: true,
-                        ),*/
-                        barWidth: 4,
-                        isStrokeCapRound: true,
-                        belowBarData: BarAreaData(
-                          show: true,
-                          gradient: LinearGradient(
-                            colors: [
-                              AppPallete.underGraphColor,
-                              AppPallete.underGraphColor.withAlpha(100),
-                              AppPallete.underGraphColor.withAlpha(50),
-                              AppPallete.underGraphColor.withAlpha(0),
-                            ],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
-                        ),
-                      ),
-                    ],
+                    barGroups:
+                        _displayData
+                            .map(
+                              (spot) => BarChartGroupData(
+                                x: spot.x.toInt(),
+                                barRods: [
+                                  BarChartRodData(
+                                    toY: spot.y.abs(),
+                                    fromY: 0,
+                                    gradient: LinearGradient(
+                                      colors:
+                                          spot.y >= 0
+                                              ? [
+                                                AppPallete.primaryColor,
+                                                AppPallete.primaryColor
+                                                    .withAlpha(150),
+                                              ]
+                                              : [
+                                                AppPallete.errorColor,
+                                                AppPallete.errorColor.withAlpha(
+                                                  150,
+                                                ),
+                                              ],
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                    ),
+                                    width: 16,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ],
+                              ),
+                            )
+                            .toList(),
                   ),
                 ),
               ),
@@ -348,11 +296,3 @@ class _GraphWidgetState extends State<GraphWidget> {
     );
   }
 }
-
-/*
-// Need to import this for Math.sin
-class Math {
-  static double sin(double x) {
-    return x.remainder(6.28318).sin();
-  }
-}*/

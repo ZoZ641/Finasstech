@@ -32,6 +32,10 @@ class _CurvedNavBarState extends State<CurvedNavBar> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:
+          isDarkMode(context)
+              ? AppPallete.darkBackgroundColorgal
+              : AppPallete.lightBackgroundColorchat,
       body: widget.pages[currentPage],
       bottomNavigationBar: CurvedNavigationBar(
         index: currentPage,

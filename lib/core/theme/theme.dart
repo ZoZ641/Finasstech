@@ -9,7 +9,21 @@ class AppTheme {
   );
   /* Dark mode Theme */
   static final ThemeData darkThemeMode = ThemeData.dark().copyWith(
-    textSelectionTheme: const TextSelectionThemeData(cursorColor: Colors.white),
+    /* colorScheme: ColorScheme(
+      brightness: Brightness.dark,
+      primary: AppPallete.primaryColor,
+      onPrimary: Colors.white,
+      secondary: AppPallete.secondryColor,
+      onSecondary: Colors.white,
+      error: AppPallete.errorColor,
+      onError: Colors.white,
+      surface: Colors.white,
+      onSurface: AppPallete.primaryColor,
+    ),*/
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor: Colors.white,
+      selectionHandleColor: AppPallete.primaryColor,
+    ),
     scaffoldBackgroundColor: AppPallete.darkBackgroundColorgal,
     primaryColor: AppPallete.primaryColor,
     appBarTheme: AppBarTheme(
@@ -21,9 +35,11 @@ class AppTheme {
         fontSize: 25,
         letterSpacing: 2,
       ),
+      actionsIconTheme: IconThemeData(color: AppPallete.primaryColor),
     ),
     inputDecorationTheme: InputDecorationTheme(
       fillColor: AppPallete.darkInputFieldColor,
+      suffixIconColor: AppPallete.primaryColor,
       labelStyle: const TextStyle(color: Colors.white, fontSize: 18),
       filled: true,
       border: _border(Color(0xFF3f5043)),
@@ -45,6 +61,12 @@ class AppTheme {
           borderRadius: BorderRadius.all(Radius.circular(12)),
         ),
         padding: const EdgeInsets.symmetric(vertical: 15),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: AppPallete.primaryColor,
+        textStyle: const TextStyle(fontSize: 18),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -75,10 +97,40 @@ class AppTheme {
       ),
       margin: EdgeInsets.all(8),
     ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: AppPallete.darkBackgroundColorgal,
+    ),
+    dropdownMenuTheme: DropdownMenuThemeData(
+      textStyle: TextStyle(color: AppPallete.primaryColor),
+      inputDecorationTheme: InputDecorationTheme(
+        floatingLabelStyle: TextStyle(color: AppPallete.primaryColor),
+      ),
+    ),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: AppPallete.darkBackgroundColorgal,
+      confirmButtonStyle: TextButton.styleFrom(),
+      cancelButtonStyle: TextButton.styleFrom(),
+    ),
+    listTileTheme: ListTileThemeData(
+      leadingAndTrailingTextStyle: TextStyle(color: Colors.white),
+      iconColor: Colors.white,
+      subtitleTextStyle: TextStyle(color: Colors.white70),
+    ),
   );
 
   /* Light mode Theme */
   static final ThemeData lightThemeMode = ThemeData.light().copyWith(
+    /* colorScheme: ColorScheme(
+      brightness: Brightness.dark,
+      primary: AppPallete.primaryColor,
+      onPrimary: Colors.white,
+      secondary: AppPallete.secondryColor,
+      onSecondary: Colors.white,
+      error: AppPallete.errorColor,
+      onError: Colors.white,
+      surface: Colors.white,
+      onSurface: AppPallete.primaryColor,
+    ),*/
     scaffoldBackgroundColor: AppPallete.lightBackgroundColorchat,
     primaryColor: AppPallete.primaryColor,
     appBarTheme: const AppBarTheme(

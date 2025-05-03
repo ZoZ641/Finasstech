@@ -4,6 +4,7 @@ class AppPallete {
   static const Color primaryColor = Color(0xFF28a745);
   static const Color secondryColor = Color(0xFF009688);
   static const Color inputFieldErrorColor = Color(0xFFEC4E20);
+  static const Color errorColor = Color(0xFFff3b30);
 
   /* Light theme colors */
   static const Color lightBackgroundColorchat = Color(0xFFfafffd);

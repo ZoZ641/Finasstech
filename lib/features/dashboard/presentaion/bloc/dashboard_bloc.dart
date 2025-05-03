@@ -153,6 +153,10 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         break;
     }
 
+    // Emit loading state while recalculating
+    emit(DashboardLoading());
+
+    // Recalculate all metrics with the updated time periods
     final metrics = _calculateAllMetrics(
       incomePeriod: incomePeriod,
       expensesPeriod: expensesPeriod,
@@ -174,7 +178,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     );
   }
 
-  // Calculate all metrics with potentially different time periods for each widget
+  // Fix in _calculateAllMetrics method
   DashboardMetrics _calculateAllMetrics({
     required TimePeriod incomePeriod,
     required TimePeriod expensesPeriod,
@@ -196,10 +200,16 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
 
     // Calculate totals
     final income = _calculateIncome(incomeFilteredExpenses);
-    final expensesAmount = _calculateExpenses(expensesFilteredExpenses);
+    final expensesAmount =
+        _calculateExpenses(
+          expensesFilteredExpenses,
+        ).abs(); // Use absolute value for display
+
+    // Calculate cash flow properly as income minus expenses (without negating expenses)
+    // Since expenses are already stored as positive values in the system
     final cashFlow =
         _calculateIncome(cashFlowFilteredExpenses) -
-        (_calculateExpenses(cashFlowFilteredExpenses) * -1);
+        _calculateExpenses(cashFlowFilteredExpenses).abs();
 
     // Generate graph data
     final incomeData = _generateIncomeData(
@@ -246,10 +256,6 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       case TimePeriod.year:
         startDate = DateTime(now.year, 1, 1);
         break;
-      case TimePeriod.custom:
-        // Handle custom date range if needed
-        startDate = DateTime(now.year, now.month, 1); // Default to month
-        break;
     }
 
     return expenses
@@ -271,10 +277,12 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
 
   List<FlSpot> _generateIncomeData(List<Expense> expenses, TimePeriod period) {
     // Generate data points for income graph based on time period
-    return _generateGraphData(
+    final spots = _generateGraphData(
       expenses.where((e) => e.category.toLowerCase() == 'sales').toList(),
       period,
     );
+    // Return spots without converting to abs()
+    return spots;
   }
 
   List<FlSpot> _generateExpensesData(
@@ -282,71 +290,203 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     TimePeriod period,
   ) {
     // Generate data points for expenses graph based on time period
-    return _generateGraphData(
+    final spots = _generateGraphData(
       expenses.where((e) => e.category.toLowerCase() != 'sales').toList(),
       period,
     );
+    // Return spots without converting to abs()
+    return spots;
   }
 
   List<FlSpot> _generateCashFlowData(
     List<Expense> expenses,
     TimePeriod period,
   ) {
-    // Generate data points for cash flow (income - expenses) graph based on time period
-    final incomeByDate = <DateTime, double>{};
-    final expensesByDate = <DateTime, double>{};
-    final cashFlowByDate = <DateTime, double>{};
+    if (expenses.isEmpty) {
+      return _generateEmptyDataPoints(period);
+    }
 
+    final now = DateTime.now();
+    final dataByDate = <DateTime, double>{};
+
+    // Initialize data points based on the period
+    switch (period) {
+      case TimePeriod.week:
+        // Generate 7 data points for the current week
+        final weekStart = DateTime(
+          now.year,
+          now.month,
+          now.day - now.weekday + 1,
+        );
+        for (int i = 0; i < 7; i++) {
+          final currentDate = weekStart.add(Duration(days: i));
+          dataByDate[currentDate] = 0.0; // Initialize with 0
+        }
+        break;
+      case TimePeriod.month:
+        // Generate 4 data points for the current month (weekly sums)
+        final monthStart = DateTime(now.year, now.month, 1);
+        for (int i = 0; i < 4; i++) {
+          final weekStart = monthStart.add(Duration(days: i * 7));
+          dataByDate[weekStart] = 0.0; // Initialize with 0
+        }
+        break;
+      case TimePeriod.quarter:
+        // Generate 3 data points for the current quarter (monthly sums)
+        final quarterStartMonth = ((now.month - 1) ~/ 3) * 3 + 1;
+        final quarterStart = DateTime(now.year, quarterStartMonth, 1);
+        for (int i = 0; i < 3; i++) {
+          final monthStart = DateTime(
+            quarterStart.year,
+            quarterStart.month + i,
+            1,
+          );
+          dataByDate[monthStart] = 0.0; // Initialize with 0
+        }
+        break;
+      case TimePeriod.year:
+        // Generate 4 data points for the current year (quarterly sums)
+        final yearStart = DateTime(now.year, 1, 1);
+        for (int i = 0; i < 4; i++) {
+          final quarterStart = DateTime(yearStart.year, i * 3 + 1, 1);
+          dataByDate[quarterStart] = 0.0; // Initialize with 0
+        }
+        break;
+    }
+
+    // Calculate income and expenses for each date
     for (var expense in expenses) {
       final date = _normalizeDate(expense.date, period);
-
-      if (expense.category.toLowerCase() == 'sales') {
-        incomeByDate[date] = (incomeByDate[date] ?? 0) + expense.amount;
-      } else {
-        expensesByDate[date] = (expensesByDate[date] ?? 0) + expense.amount;
+      if (dataByDate.containsKey(date)) {
+        if (expense.category.toLowerCase() == 'sales') {
+          // Income (sales) adds to cash flow
+          dataByDate[date] = (dataByDate[date] ?? 0) + expense.amount;
+        } else {
+          // Expenses subtract from cash flow (keep as negative)
+          dataByDate[date] = (dataByDate[date] ?? 0) - expense.amount.abs();
+        }
       }
     }
 
-    // Combine all unique dates
-    final allDates =
-        {...incomeByDate.keys, ...expensesByDate.keys}.toList()..sort();
-
-    // Calculate cash flow for each date
-    for (var date in allDates) {
-      cashFlowByDate[date] =
-          (incomeByDate[date] ?? 0) - (expensesByDate[date] ?? 0);
-    }
-
-    // Convert to FlSpot list
+    // Sort dates and create FlSpots
+    final sortedDates = dataByDate.keys.toList()..sort();
     final spots = <FlSpot>[];
-    for (var i = 0; i < allDates.length; i++) {
-      spots.add(FlSpot(i.toDouble(), cashFlowByDate[allDates[i]] ?? 0));
+    for (var i = 0; i < sortedDates.length; i++) {
+      // Allow negative values to be shown in the chart
+      spots.add(FlSpot(i.toDouble(), dataByDate[sortedDates[i]] ?? 0));
     }
 
     return spots;
   }
 
   List<FlSpot> _generateGraphData(List<Expense> expenses, TimePeriod period) {
-    if (expenses.isEmpty) return [];
+    if (expenses.isEmpty) {
+      print('No expenses for period: $period, returning empty data points');
+      return _generateEmptyDataPoints(period);
+    }
 
+    final now = DateTime.now();
     final dataByDate = <DateTime, double>{};
+
+    // Initialize data points based on the period
+    switch (period) {
+      case TimePeriod.week:
+        // Generate 7 data points for the current week
+        final weekStart = DateTime(
+          now.year,
+          now.month,
+          now.day - now.weekday + 1,
+        );
+        for (int i = 0; i < 7; i++) {
+          final currentDate = weekStart.add(Duration(days: i));
+          dataByDate[currentDate] = 0.0; // Initialize with 0
+        }
+        break;
+      case TimePeriod.month:
+        // Generate 4 data points for the current month (weekly sums)
+        final monthStart = DateTime(now.year, now.month, 1);
+        print('Month view - start date: $monthStart');
+        for (int i = 0; i < 4; i++) {
+          final weekStart = monthStart.add(Duration(days: i * 7));
+          dataByDate[weekStart] = 0.0; // Initialize with 0
+          print('Month week $i: $weekStart initialized to 0.0');
+        }
+        break;
+      case TimePeriod.quarter:
+        // Generate 3 data points for the current quarter (monthly sums)
+        final quarterStartMonth = ((now.month - 1) ~/ 3) * 3 + 1;
+        final quarterStart = DateTime(now.year, quarterStartMonth, 1);
+        for (int i = 0; i < 3; i++) {
+          final monthStart = DateTime(
+            quarterStart.year,
+            quarterStart.month + i,
+            1,
+          );
+          dataByDate[monthStart] = 0.0; // Initialize with 0
+        }
+        break;
+      case TimePeriod.year:
+        // Generate 4 data points for the current year (quarterly sums)
+        final yearStart = DateTime(now.year, 1, 1);
+        for (int i = 0; i < 4; i++) {
+          final quarterStart = DateTime(yearStart.year, i * 3 + 1, 1);
+          dataByDate[quarterStart] = 0.0; // Initialize with 0
+        }
+        break;
+    }
 
     // Group expenses by date according to period
     for (var expense in expenses) {
       final date = _normalizeDate(expense.date, period);
-      dataByDate[date] = (dataByDate[date] ?? 0) + expense.amount;
+      if (dataByDate.containsKey(date)) {
+        dataByDate[date] = (dataByDate[date] ?? 0) + expense.amount;
+        if (period == TimePeriod.month) {
+          print(
+            'Month view - expense added: ${expense.date} normalized to $date, amount: ${expense.amount}, total: ${dataByDate[date]}',
+          );
+        }
+      } else if (period == TimePeriod.month) {
+        print(
+          'Month view - expense date not found in dataByDate: ${expense.date} normalized to $date',
+        );
+      }
     }
 
-    // Sort dates
+    // Sort dates and create FlSpots
     final sortedDates = dataByDate.keys.toList()..sort();
+    if (period == TimePeriod.month) {
+      print('Month view - sorted dates: $sortedDates');
+    }
 
-    // Create FlSpots
     final spots = <FlSpot>[];
     for (var i = 0; i < sortedDates.length; i++) {
       spots.add(FlSpot(i.toDouble(), dataByDate[sortedDates[i]] ?? 0));
+      if (period == TimePeriod.month) {
+        print(
+          'Month view - spot $i: ${i.toDouble()}, ${dataByDate[sortedDates[i]]}',
+        );
+      }
+    }
+
+    if (period == TimePeriod.month) {
+      print('Month view - final spots: $spots');
     }
 
     return spots;
+  }
+
+  List<FlSpot> _generateEmptyDataPoints(TimePeriod period) {
+    // Generate empty data points for each period
+    switch (period) {
+      case TimePeriod.week:
+        return List.generate(7, (index) => FlSpot(index.toDouble(), 0));
+      case TimePeriod.month:
+        return List.generate(4, (index) => FlSpot(index.toDouble(), 0));
+      case TimePeriod.quarter:
+        return List.generate(3, (index) => FlSpot(index.toDouble(), 0));
+      case TimePeriod.year:
+        return List.generate(4, (index) => FlSpot(index.toDouble(), 0));
+    }
   }
 
   DateTime _normalizeDate(DateTime date, TimePeriod period) {
@@ -354,18 +494,19 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       case TimePeriod.week:
         return DateTime(date.year, date.month, date.day); // Daily for week view
       case TimePeriod.month:
-        final weekStart = date.subtract(Duration(days: date.weekday - 1));
-        return DateTime(
-          weekStart.year,
-          weekStart.month,
-          weekStart.day,
-        ); // Weekly for month view
+        // Calculate which week of the month this date belongs to
+        final monthStart = DateTime(date.year, date.month, 1);
+        final daysSinceMonthStart = date.difference(monthStart).inDays;
+        final weekOfMonth = daysSinceMonthStart ~/ 7; // 0, 1, 2, or 3
+
+        // Get the first day of the corresponding week
+        return DateTime(date.year, date.month, 1 + (weekOfMonth * 7));
       case TimePeriod.quarter:
         return DateTime(date.year, date.month, 1); // Monthly for quarter view
       case TimePeriod.year:
-        return DateTime(date.year, date.month, 1); // Monthly for year view
-      case TimePeriod.custom:
-        return DateTime(date.year, date.month, date.day); // Default to daily
+        // Get the start of the quarter for the given date
+        final quarterStartMonth = ((date.month - 1) ~/ 3) * 3 + 1;
+        return DateTime(date.year, quarterStartMonth, 1);
     }
   }
 }
