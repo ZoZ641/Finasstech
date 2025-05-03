@@ -76,15 +76,34 @@ class BudgetCategoriesScreen extends StatelessWidget {
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Cancel'),
               ),
-              ElevatedButton(
+              TextButton(
                 onPressed: () {
                   final name = nameController.text.trim();
+                  if (name.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Category name cannot be empty'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Check if the category already exists
+                  if (categories.containsKey(name)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Category with this name already exists'),
+                      ),
+                    );
+                    return;
+                  }
+
                   final minPercentage =
                       double.tryParse(minPercentageController.text) ?? 0.0;
                   final maxPercentage =
                       double.tryParse(maxPercentageController.text) ?? 100.0;
 
-                  if (name.isNotEmpty && minPercentage <= maxPercentage) {
+                  if (minPercentage <= maxPercentage) {
                     final newCategory = BudgetCategoryModel(
                       name: name,
                       percentage: 0,
@@ -95,6 +114,14 @@ class BudgetCategoriesScreen extends StatelessWidget {
                     );
                     onCategoryAdded(newCategory);
                     Navigator.pop(context);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Minimum percentage must be less than or equal to maximum percentage',
+                        ),
+                      ),
+                    );
                   }
                 },
                 child: const Text('Add'),
@@ -107,7 +134,16 @@ class BudgetCategoriesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Adjust Your Budget Categories')),
+      appBar:
+          isSettingsPage
+              ? null
+              : AppBar(
+                centerTitle: false,
+                title: const Text(
+                  'Adjust Your Budget Categories',
+                  style: TextStyle(fontSize: 20),
+                ),
+              ),
       floatingActionButton:
           isSettingsPage
               ? FloatingActionButton(
@@ -123,41 +159,52 @@ class BudgetCategoriesScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Forecasted Sales: £${budget.forecastedSales.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Forecasted Sales: £${budget.forecastedSales.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Builder(
+                        builder: (context) {
+                          double totalPercentage = categories.values.fold(
+                            0.0,
+                            (sum, category) => sum + category.percentage,
+                          );
+                          Color containerColor = AppPallete.primaryColor;
+                          if (totalPercentage > 100) {
+                            containerColor = AppPallete.errorColor;
+                          }
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: containerColor,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${totalPercentage.toStringAsFixed(2)}%',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   ElevatedButton(
                     onPressed: onSave,
-                    child: const Text('Save Budget'),
-                  ),
-                ],
-              ),
-            ),
-          if (isSettingsPage)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Budget Categories Settings',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: onSave,
-                    icon: const Icon(Icons.save),
-                    label: const Text('Save Changes'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppPallete.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 5.0),
+                      child: Text('Save Budget'),
                     ),
                   ),
                 ],
@@ -165,61 +212,126 @@ class BudgetCategoriesScreen extends StatelessWidget {
             ),
           if (!isSettingsPage) const Divider(),
           Expanded(
-            child: ListView.builder(
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                final key = categories.keys.elementAt(index);
-                final category = categories[key]!;
+            child:
+                categories.isEmpty
+                    ? const Center(
+                      child: Text(
+                        'No budget categories. Add one to get started.',
+                      ),
+                    )
+                    : ListView.builder(
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final key = categories.keys.elementAt(index);
+                        final category = categories[key]!;
 
-                if (isSettingsPage) {
-                  // Use the settings version for the settings page
-                  return BudgetCategoryItemSettings(
-                    category: category,
-                    onNameChanged: (newName) {
-                      onCategoryChanged(key, category.copyWith(name: newName));
-                    },
-                    onMinMaxChanged: (min, max) {
-                      onCategoryChanged(
-                        key,
-                        category.copyWith(
-                          minRecommendedPercentage: min,
-                          maxRecommendedPercentage: max,
-                        ),
-                      );
-                    },
-                    onDelete: () => onCategoryDeleted(key),
-                  );
-                } else {
-                  // Use the create version for budget creation
-                  return BudgetCategoryItemCreate(
-                    category: category,
-                    forecastedSales: budget.forecastedSales,
-                    onPercentageChanged: (newPercentage) {
-                      final updatedAmount =
-                          budget.forecastedSales * (newPercentage / 100);
-                      onCategoryChanged(
-                        key,
-                        category.copyWith(
-                          percentage: newPercentage,
-                          amount: updatedAmount,
-                        ),
-                      );
-                    },
-                    onAmountChanged: (newAmount) {
-                      final newPercentage =
-                          (newAmount / budget.forecastedSales) * 100;
-                      onCategoryChanged(
-                        key,
-                        category.copyWith(
-                          amount: newAmount,
-                          percentage: newPercentage,
-                        ),
-                      );
-                    },
-                  );
-                }
-              },
-            ),
+                        if (isSettingsPage) {
+                          // Use the settings version for the settings page
+                          return BudgetCategoryItemSettings(
+                            key: ValueKey(
+                              key,
+                            ), // Add key for proper identification
+                            category: category,
+                            onNameChanged: (newName) {
+                              if (newName != key && newName.isNotEmpty) {
+                                // If the name has changed, we need to handle it specially
+                                if (!categories.containsKey(newName)) {
+                                  // Create a new category with the new name
+                                  final updatedCategory = category.copyWith(
+                                    name: newName,
+                                  );
+
+                                  // Remove the old category and add the new one with the new key
+                                  onCategoryDeleted(key);
+                                  onCategoryAdded(updatedCategory);
+                                } else {
+                                  // Show an error if the new name already exists
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'A category with this name already exists',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            onMinMaxChanged: (min, max) {
+                              onCategoryChanged(
+                                key,
+                                category.copyWith(
+                                  minRecommendedPercentage: min,
+                                  maxRecommendedPercentage: max,
+                                ),
+                              );
+                            },
+                            onDelete: () {
+                              // Confirm deletion
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text('Delete Category'),
+                                    content: Text(
+                                      'Are you sure you want to delete "${category.name}"?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed:
+                                            () => Navigator.of(context).pop(),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                          onCategoryDeleted(key);
+                                        },
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                        ),
+                                        child: const Text('Delete'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        } else {
+                          // Use the create version for budget creation
+                          return BudgetCategoryItemCreate(
+                            key: ValueKey(
+                              key,
+                            ), // Add key for proper identification
+                            category: category,
+                            forecastedSales: budget.forecastedSales,
+                            onPercentageChanged: (newPercentage) {
+                              final updatedAmount =
+                                  budget.forecastedSales *
+                                  (newPercentage / 100);
+                              onCategoryChanged(
+                                key,
+                                category.copyWith(
+                                  percentage: newPercentage,
+                                  amount: updatedAmount,
+                                ),
+                              );
+                            },
+                            onAmountChanged: (newAmount) {
+                              final newPercentage =
+                                  (newAmount / budget.forecastedSales) * 100;
+                              onCategoryChanged(
+                                key,
+                                category.copyWith(
+                                  amount: newAmount,
+                                  percentage: newPercentage,
+                                ),
+                              );
+                            },
+                          );
+                        }
+                      },
+                    ),
           ),
         ],
       ),

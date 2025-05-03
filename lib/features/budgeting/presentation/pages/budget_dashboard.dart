@@ -1,3 +1,4 @@
+import 'package:finasstech/core/theme/app_pallete.dart';
 import 'package:flutter/material.dart';
 
 import '../../domain/entities/budget.dart';
@@ -39,7 +40,9 @@ class BudgetDashboard extends StatelessWidget {
 
               // Determine status color
               Color statusColor =
-                  category.usage > category.amount ? Colors.red : Colors.green;
+                  category.usage > category.amount
+                      ? Colors.red
+                      : AppPallete.primaryColor;
               if (usagePercentage > 0.85 && usagePercentage <= 1.0) {
                 statusColor = Colors.orange; // Approaching limit
               } else if (usagePercentage > 1.0) {
@@ -64,7 +67,7 @@ class BudgetDashboard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '\$${spent.toStringAsFixed(2)} / \$${category.amount.toStringAsFixed(2)}',
+                            '£${spent.toStringAsFixed(2)} / £${category.amount.toStringAsFixed(2)}',
                             style: TextStyle(
                               color: statusColor,
                               fontWeight: FontWeight.bold,
@@ -83,7 +86,7 @@ class BudgetDashboard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Remaining: \$${remainingAmount.toStringAsFixed(2)}',
+                            'Remaining: £${remainingAmount.toStringAsFixed(2)}',
                             style: TextStyle(
                               color: remainingAmount < 0 ? Colors.red : null,
                             ),

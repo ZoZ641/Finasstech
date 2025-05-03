@@ -7,6 +7,7 @@ class BudgetCategoryItemSettings extends StatefulWidget {
   final Function(String) onNameChanged;
   final Function(double, double) onMinMaxChanged;
   final VoidCallback onDelete;
+
   const BudgetCategoryItemSettings({
     super.key,
     required this.category,
@@ -29,9 +30,18 @@ class _BudgetCategoryItemSettingsState
   late FocusNode _minFocusNode;
   late FocusNode _maxFocusNode;
 
+  // Store original values to only update when changed
+  late String _originalName;
+  late double _originalMin;
+  late double _originalMax;
+
   @override
   void initState() {
     super.initState();
+    _originalName = widget.category.name;
+    _originalMin = widget.category.minRecommendedPercentage;
+    _originalMax = widget.category.maxRecommendedPercentage;
+
     _nameController = TextEditingController(text: widget.category.name);
     _minPercentageController = TextEditingController(
       text: widget.category.minRecommendedPercentage.toStringAsFixed(1),
@@ -39,6 +49,7 @@ class _BudgetCategoryItemSettingsState
     _maxPercentageController = TextEditingController(
       text: widget.category.maxRecommendedPercentage.toStringAsFixed(1),
     );
+
     _nameFocusNode = FocusNode();
     _minFocusNode = FocusNode();
     _maxFocusNode = FocusNode();
@@ -53,6 +64,9 @@ class _BudgetCategoryItemSettingsState
     _nameController.dispose();
     _minPercentageController.dispose();
     _maxPercentageController.dispose();
+    _nameFocusNode.removeListener(_onNameFocusChange);
+    _minFocusNode.removeListener(_onMinFocusChange);
+    _maxFocusNode.removeListener(_onMaxFocusChange);
     _nameFocusNode.dispose();
     _minFocusNode.dispose();
     _maxFocusNode.dispose();
@@ -61,7 +75,14 @@ class _BudgetCategoryItemSettingsState
 
   void _onNameFocusChange() {
     if (!_nameFocusNode.hasFocus) {
-      widget.onNameChanged(_nameController.text);
+      final newName = _nameController.text.trim();
+      if (newName.isNotEmpty && newName != _originalName) {
+        widget.onNameChanged(newName);
+        _originalName = newName;
+      } else if (newName.isEmpty) {
+        // Reset to original if empty
+        _nameController.text = _originalName;
+      }
     }
   }
 
@@ -78,13 +99,30 @@ class _BudgetCategoryItemSettingsState
   }
 
   void _handleMinMaxChange() {
-    final minPercentage = double.tryParse(_minPercentageController.text) ?? 0.0;
+    final minPercentage =
+        double.tryParse(_minPercentageController.text) ?? _originalMin;
     final maxPercentage =
-        double.tryParse(_maxPercentageController.text) ?? 100.0;
+        double.tryParse(_maxPercentageController.text) ?? _originalMax;
 
-    // Ensure min is not greater than max
-    if (minPercentage <= maxPercentage) {
-      widget.onMinMaxChanged(minPercentage, maxPercentage);
+    // Only update if values have changed
+    if (minPercentage != _originalMin || maxPercentage != _originalMax) {
+      // Ensure min is not greater than max
+      if (minPercentage <= maxPercentage) {
+        widget.onMinMaxChanged(minPercentage, maxPercentage);
+        _originalMin = minPercentage;
+        _originalMax = maxPercentage;
+      } else {
+        // Reset to valid values
+        _minPercentageController.text = _originalMin.toStringAsFixed(1);
+        _maxPercentageController.text = _originalMax.toStringAsFixed(1);
+
+        // Optional: Show an error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Minimum percentage cannot be greater than maximum'),
+          ),
+        );
+      }
     }
   }
 
@@ -113,6 +151,7 @@ class _BudgetCategoryItemSettingsState
                 IconButton(
                   onPressed: widget.onDelete,
                   icon: const Icon(Icons.delete, color: Colors.red),
+                  tooltip: 'Delete category',
                 ),
               ],
             ),

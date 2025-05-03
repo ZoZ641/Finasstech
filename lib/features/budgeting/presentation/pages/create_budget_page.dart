@@ -137,13 +137,19 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
 
   Widget _buildFirstTimeUserView() {
     return Scaffold(
-      appBar: AppBar(title: const Text('Welcome to Budget Setup!')),
+      appBar: AppBar(
+        title: const Text(
+          'Welcome to Budget Setup!',
+          style: TextStyle(fontSize: 24),
+          overflow: TextOverflow.visible,
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Enter your average sales from last year to begin.'),
+            const Text('Enter your total sales from last year to begin.'),
             const SizedBox(height: 24),
             TextField(
               controller: _lastYearSalesController,

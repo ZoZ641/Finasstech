@@ -75,6 +75,7 @@ class _BudgetHistoryPageState extends State<BudgetHistoryPage> {
                       context.read<BudgetBloc>().add(
                         CalculateBudgetUsageEvent(budget: budget),
                       );
+                      Navigator.pop(context);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -82,7 +83,7 @@ class _BudgetHistoryPageState extends State<BudgetHistoryPage> {
                               (context) => Scaffold(
                                 appBar: AppBar(
                                   title: Text(
-                                    'the budget of ${budget.createdAt.year}',
+                                    'Budget of ${budget.createdAt.year}',
                                   ),
                                 ),
                                 body: BudgetDashboard(
@@ -92,9 +93,11 @@ class _BudgetHistoryPageState extends State<BudgetHistoryPage> {
                               ),
                         ),
                       ).then((_) {
-                        context.read<BudgetBloc>().add(
-                          const GetAllBudgetsEvent(),
-                        );
+                        if (mounted) {
+                          context.read<BudgetBloc>().add(
+                            const GetAllBudgetsEvent(),
+                          );
+                        }
                       });
                     },
                   ),

@@ -1,4 +1,5 @@
 import 'package:finasstech/core/common/widgets/loader.dart';
+import 'package:finasstech/core/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/common/widgets/loader.dart';
@@ -25,6 +26,7 @@ class _BudgetPageState extends State<BudgetPage> {
   Map<String, double> _budgetUsage = {};
   Budget? _latestBudget;
   bool _isLoading = true;
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
@@ -40,7 +42,7 @@ class _BudgetPageState extends State<BudgetPage> {
 
   void _checkYearEnd() {
     final now = DateTime.now();
-    if (now.month == 12 && now.day >= 30) {
+    if (now.month == 1 && now.day >= 1 && now.day <= 31) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         showDialog(
           context: context,
@@ -55,7 +57,7 @@ class _BudgetPageState extends State<BudgetPage> {
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Later'),
                   ),
-                  ElevatedButton(
+                  TextButton(
                     onPressed: () {
                       Navigator.pop(context);
                       Navigator.push(
@@ -71,6 +73,11 @@ class _BudgetPageState extends State<BudgetPage> {
               ),
         );
       });
+      _notificationService.showNotification(
+        title: "Year End Budget Creation",
+        body:
+            "The current year is ending. Would you like to create a new budget for the upcoming year?",
+      );
     }
   }
 

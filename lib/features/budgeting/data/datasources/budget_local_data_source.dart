@@ -156,7 +156,7 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   /// Retrieves the latest budget from the local storage.
   ///
   /// If there are no budgets stored, it returns null. Otherwise, it finds
-  /// the budget with the most recent `updatedAt` timestamp and returns it
+  /// the budget with the most recent `createdAt` timestamp and returns it
   /// as a [BudgetModel].
   ///
   /// Throws a [ServerException] if there is an error during retrieval.
@@ -165,7 +165,7 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
       if (budgetBox.isEmpty) return null;
       final budgets = budgetBox.values.toList();
       final latestBudget = budgets.reduce(
-        (curr, next) => curr.updatedAt.isAfter(next.updatedAt) ? curr : next,
+        (curr, next) => curr.createdAt.isAfter(next.createdAt) ? curr : next,
       );
       return BudgetModel(
         id: latestBudget.id,
