@@ -244,7 +244,14 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
 
     switch (period) {
       case TimePeriod.week:
-        startDate = DateTime(now.year, now.month, now.day - now.weekday + 1);
+        // Week starts on Saturday (weekday 6 in Dart)
+        // Find the most recent Saturday (including today if it's Saturday)
+        final int daysToSubtract = now.weekday == 6 ? 0 : (now.weekday + 1) % 7;
+        startDate = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).subtract(Duration(days: daysToSubtract));
         break;
       case TimePeriod.month:
         startDate = DateTime(now.year, now.month, 1);
@@ -259,8 +266,19 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     }
 
     return expenses
-        .where((expense) => expense.date.isAfter(startDate))
+        .where(
+          (expense) =>
+              expense.date.isAfter(startDate) ||
+              isSameDay(expense.date, startDate),
+        )
         .toList();
+  }
+
+  // Helper function to check if two dates are the same day
+  bool isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+        date1.month == date2.month &&
+        date1.day == date2.day;
   }
 
   double _calculateIncome(List<Expense> expenses) {
@@ -312,12 +330,14 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     // Initialize data points based on the period
     switch (period) {
       case TimePeriod.week:
-        // Generate 7 data points for the current week
+        // Week starts on Saturday (weekday 6 in Dart)
+        // Find the most recent Saturday (including today if it's Saturday)
+        final int daysToSubtract = now.weekday == 6 ? 0 : (now.weekday + 1) % 7;
         final weekStart = DateTime(
           now.year,
           now.month,
-          now.day - now.weekday + 1,
-        );
+          now.day,
+        ).subtract(Duration(days: daysToSubtract));
         for (int i = 0; i < 7; i++) {
           final currentDate = weekStart.add(Duration(days: i));
           dataByDate[currentDate] = 0.0; // Initialize with 0
@@ -391,12 +411,14 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     // Initialize data points based on the period
     switch (period) {
       case TimePeriod.week:
-        // Generate 7 data points for the current week
+        // Week starts on Saturday (weekday 6 in Dart)
+        // Find the most recent Saturday (including today if it's Saturday)
+        final int daysToSubtract = now.weekday == 6 ? 0 : (now.weekday + 1) % 7;
         final weekStart = DateTime(
           now.year,
           now.month,
-          now.day - now.weekday + 1,
-        );
+          now.day,
+        ).subtract(Duration(days: daysToSubtract));
         for (int i = 0; i < 7; i++) {
           final currentDate = weekStart.add(Duration(days: i));
           dataByDate[currentDate] = 0.0; // Initialize with 0
@@ -490,9 +512,18 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
   }
 
   DateTime _normalizeDate(DateTime date, TimePeriod period) {
+    final now = DateTime.now();
     switch (period) {
       case TimePeriod.week:
-        return DateTime(date.year, date.month, date.day); // Daily for week view
+        // Week starts on Saturday (weekday 6 in Dart)
+        // Find the most recent Saturday for this date
+        final int daysToSubtract =
+            date.weekday == 6 ? 0 : (date.weekday + 1) % 7;
+        return DateTime(
+          date.year,
+          date.month,
+          date.day,
+        ).subtract(Duration(days: daysToSubtract));
       case TimePeriod.month:
         // Calculate which week of the month this date belongs to
         final monthStart = DateTime(date.year, date.month, 1);

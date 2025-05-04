@@ -135,7 +135,10 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
                     ),
                     GraphWidget(
                       title: 'Expenses',
-                      amount: (state.expenses * -1).toStringAsFixed(0),
+                      amount: (state.expenses == 0
+                              ? state.expenses
+                              : state.expenses * -1)
+                          .toStringAsFixed(0),
                       data: state.expensesData,
                       //initialTimePeriod: state.expensesPeriod,
                       onTimePeriodChanged: _handleExpensesTimePeriodChanged,
