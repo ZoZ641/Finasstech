@@ -29,11 +29,12 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
   Map<String, BudgetCategoryModel> categories = {};
   bool awaitingCategorySetup = false;
 
-  /*@override
+  @override
   void initState() {
     super.initState();
-    context.read<BudgetBloc>().add(CheckForExistingBudgetData());
-  }*/
+    // Check for existing budget data and get the latest budget
+    context.read<BudgetBloc>().add(GetLatestBudgetEvent());
+  }
 
   @override
   void dispose() {
@@ -48,8 +49,16 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
         if (state is BudgetCreatedNeedsCategorization) {
           debugPrint('✅ Switching to Budget Category Setup View...');
           setState(() {
-            existingBudget = state.budget;
-            categories = Map.from(state.budget.categories);
+            // Create a new budget with the existing categories if we have them
+            existingBudget = Budget(
+              id: state.budget.id,
+              forecastedSales: state.budget.forecastedSales,
+              categories:
+                  categories.isNotEmpty ? categories : state.budget.categories,
+              createdAt: state.budget.createdAt,
+              updatedAt: state.budget.updatedAt,
+            );
+            categories = Map.from(existingBudget!.categories);
             awaitingCategorySetup = true;
           });
 
@@ -81,15 +90,13 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
             ContentType.success,
           );
         } else if (state is BudgetLoaded) {
+          // Always use the categories from the latest budget
           setState(() {
             existingBudget = state.budget;
             categories = Map.from(state.budget.categories);
-            awaitingCategorySetup = true;
+            awaitingCategorySetup =
+                false; // Reset this as we're creating a new budget
           });
-
-          context.read<BudgetBloc>().add(
-            CalculateBudgetUsageEvent(budget: state.budget),
-          );
         } else if (state is BudgetEmpty) {
           debugPrint('🆕 No budget found, showing setup screen.');
           setState(() {

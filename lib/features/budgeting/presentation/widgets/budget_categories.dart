@@ -144,13 +144,10 @@ class BudgetCategoriesScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 20),
                 ),
               ),
-      floatingActionButton:
-          isSettingsPage
-              ? FloatingActionButton(
-                onPressed: () => _showAddCategoryDialog(context),
-                child: const Icon(Icons.add),
-              )
-              : null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddCategoryDialog(context),
+        child: const Icon(Icons.add),
+      ),
       body: Column(
         children: [
           if (!isSettingsPage)
@@ -298,36 +295,82 @@ class BudgetCategoriesScreen extends StatelessWidget {
                             },
                           );
                         } else {
-                          // Use the create version for budget creation
-                          return BudgetCategoryItemCreate(
-                            key: ValueKey(
-                              key,
-                            ), // Add key for proper identification
-                            category: category,
-                            forecastedSales: budget.forecastedSales,
-                            onPercentageChanged: (newPercentage) {
-                              final updatedAmount =
-                                  budget.forecastedSales *
-                                  (newPercentage / 100);
-                              onCategoryChanged(
-                                key,
-                                category.copyWith(
-                                  percentage: newPercentage,
-                                  amount: updatedAmount,
+                          // Add delete capability for budget creation
+                          return Stack(
+                            children: [
+                              BudgetCategoryItemCreate(
+                                key: ValueKey(key),
+                                category: category,
+                                forecastedSales: budget.forecastedSales,
+                                onPercentageChanged: (newPercentage) {
+                                  final updatedAmount =
+                                      budget.forecastedSales *
+                                      (newPercentage / 100);
+                                  onCategoryChanged(
+                                    key,
+                                    category.copyWith(
+                                      percentage: newPercentage,
+                                      amount: updatedAmount,
+                                    ),
+                                  );
+                                },
+                                onAmountChanged: (newAmount) {
+                                  final newPercentage =
+                                      (newAmount / budget.forecastedSales) *
+                                      100;
+                                  onCategoryChanged(
+                                    key,
+                                    category.copyWith(
+                                      amount: newAmount,
+                                      percentage: newPercentage,
+                                    ),
+                                  );
+                                },
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: const Text('Delete Category'),
+                                          content: Text(
+                                            'Are you sure you want to delete "${category.name}"?',
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed:
+                                                  () =>
+                                                      Navigator.of(
+                                                        context,
+                                                      ).pop(),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                                onCategoryDeleted(key);
+                                              },
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: Colors.red,
+                                              ),
+                                              child: const Text('Delete'),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
                                 ),
-                              );
-                            },
-                            onAmountChanged: (newAmount) {
-                              final newPercentage =
-                                  (newAmount / budget.forecastedSales) * 100;
-                              onCategoryChanged(
-                                key,
-                                category.copyWith(
-                                  amount: newAmount,
-                                  percentage: newPercentage,
-                                ),
-                              );
-                            },
+                              ),
+                            ],
                           );
                         }
                       },

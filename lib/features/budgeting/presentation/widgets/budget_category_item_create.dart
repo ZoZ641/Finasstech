@@ -80,13 +80,16 @@ class _BudgetCategoryItemCreateState extends State<BudgetCategoryItemCreate> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  widget.category.name,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    widget.category.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -104,6 +107,8 @@ class _BudgetCategoryItemCreateState extends State<BudgetCategoryItemCreate> {
                     ),
                   ),
                 ),
+                // Add space for the delete button
+                const SizedBox(width: 40),
               ],
             ),
             const SizedBox(height: 16),
