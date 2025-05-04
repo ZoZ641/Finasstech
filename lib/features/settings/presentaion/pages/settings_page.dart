@@ -7,6 +7,7 @@ import '../../../budgeting/data/models/budget_category_model.dart';
 import '../../../budgeting/presentation/bloc/budget_bloc.dart';
 import '../../../budgeting/presentation/widgets/budget_categories.dart';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
+import '../../../budgeting/presentation/pages/create_budget_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -54,7 +55,30 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           _buildSignOutButton(),
           const Divider(height: 16),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateBudgetPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add_chart),
+              label: const Text('Create New Budget'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                minimumSize: const Size(double.infinity, 50),
+              ),
+            ),
+          ),
+          const Divider(height: 16),
+          // Temporarily disabled budget category editing
+          /*
           _buildBudgetContent(),
+          */
         ],
       ),
     );
@@ -151,22 +175,46 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
               children: [
-                const Text(
-                  'Budget Categories',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Budget Categories',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _hasUnsavedChanges ? _saveChanges : null,
+                      icon: const Icon(Icons.save),
+                      label: const Text('Save Changes'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            _hasUnsavedChanges
+                                ? Theme.of(context).primaryColor
+                                : Colors.grey,
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: _hasUnsavedChanges ? _saveChanges : null,
-                  icon: const Icon(Icons.save),
-                  label: const Text('Save Changes'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateBudgetPage(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.add_chart),
+                  label: const Text('Create New Budget'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        _hasUnsavedChanges
-                            ? Theme.of(context).primaryColor
-                            : Colors.grey,
+                    backgroundColor: Theme.of(context).primaryColor,
+                    minimumSize: const Size(double.infinity, 50),
                   ),
                 ),
               ],

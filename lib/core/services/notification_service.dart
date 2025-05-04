@@ -338,6 +338,10 @@ class NotificationService {
     return notificationPlugin.cancel(notificationId);
   }
 
+  Future<void> cancelAllNotifications() async {
+    return notificationPlugin.cancelAll();
+  }
+
   // Check if exact alarms are allowed
   Future<bool> checkExactAlarmsPermission() async {
     if (!Platform.isAndroid) return true;

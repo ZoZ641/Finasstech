@@ -30,6 +30,7 @@ import 'features/budgeting/domain/usecases/create_budget_with_prophet.dart';
 import 'features/budgeting/domain/usecases/create_initial_budget.dart';
 import 'features/budgeting/domain/usecases/get_Latest_Budget.dart';
 import 'features/budgeting/domain/usecases/update_budget_categories.dart';
+import 'features/budgeting/domain/usecases/check_current_year_budget.dart';
 import 'features/dashboard/presentaion/bloc/dashboard_bloc.dart';
 import 'features/expenses/data/datasources/expense_local_data_source.dart';
 import 'features/expenses/data/models/expense_model.dart';
@@ -61,7 +62,10 @@ Future<void> initDependencies() async {
   //budgetBox.clear();
 
   //print(budgetBox.keys);
-  //print(budgetBox.get('budget_1745180924854')?.toMap());
+  //print("2025 budget");
+  //print(budgetBox.get('budget_1746367201793')?.toMap());
+  //print("2026 budget");
+  //print(budgetBox.get('budget_1767712679130')?.toMap());
   final expensesBox = await Hive.openBox<ExpenseModel>('expenses');
   //print('expense keys ${expensesBox.keys}');
   //print(expensesBox.get('10c9e1df-e6e4-4069-8ba0-61bb9ab6997c')?.date);
@@ -163,6 +167,7 @@ void _initBudget(Box<BudgetModel> budgetBox, Box transactionsBox) {
       () => BudgetRepositoryImpl(serviceLocator()),
     )
     ..registerFactory(() => CheckExistingBudgetData(serviceLocator()))
+    ..registerFactory(() => CheckCurrentYearBudget(serviceLocator()))
     ..registerFactory(() => CreateInitialBudget(serviceLocator()))
     ..registerFactory(() => CreateBudgetWithProphet(serviceLocator()))
     ..registerFactory(() => UpdateBudgetCategories(serviceLocator()))
@@ -172,6 +177,7 @@ void _initBudget(Box<BudgetModel> budgetBox, Box transactionsBox) {
     ..registerLazySingleton(
       () => BudgetBloc(
         checkExistingBudgetData: serviceLocator(),
+        checkCurrentYearBudget: serviceLocator(),
         createInitialBudget: serviceLocator(),
         createBudgetWithProphet: serviceLocator(),
         updateBudgetCategories: serviceLocator(),

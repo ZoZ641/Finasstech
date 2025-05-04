@@ -158,10 +158,6 @@ class _GraphWidgetState extends State<GraphWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Debug logging for data points
-    print('Period: $_selectedPeriod, Data points: ${_displayData.length}');
-    print('Data: $_displayData');
-
     return Card.outlined(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Padding(
