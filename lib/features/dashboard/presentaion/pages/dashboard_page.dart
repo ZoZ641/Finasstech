@@ -21,6 +21,43 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
     super.initState();
     context.read<BudgetBloc>().add(CheckForExistingBudgetData());
     context.read<DashboardBloc>().add(CalculateDashboardMetrics());
+    _checkYearEnd();
+  }
+
+  void _checkYearEnd() {
+    final now = DateTime.now();
+    final budgetState = context.read<BudgetBloc>().state;
+    if (budgetState is BudgetLoaded) {
+      if (budgetState.budget.createdAt.year < now.year) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('New Year, New Budget'),
+                  content: const Text(
+                    'It\'s a new year! Create a new budget to stay on track with your financial goals.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateBudgetPage(),
+                          ),
+                        );
+                      },
+                      child: const Text('Create Budget'),
+                    ),
+                  ],
+                ),
+          );
+        });
+      }
+    }
   }
 
   void _handleIncomeTimePeriodChanged(TimePeriod period) {
@@ -94,7 +131,6 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
               } else if (state is DashboardFailure) {
                 return Center(child: Text(state.message));
               } else if (state is DashboardLoaded) {
-                print('expense data ${state.expensesData}');
                 return ListView(
                   children: [
                     // ElevatedButton(

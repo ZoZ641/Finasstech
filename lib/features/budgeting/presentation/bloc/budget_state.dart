@@ -22,6 +22,13 @@ final class BudgetDataExistsState extends BudgetState {
   const BudgetDataExistsState(this.hasExistingData);
 }
 
+/// Indicates if the current year has a budget
+final class CurrentYearBudgetState extends BudgetState {
+  final bool hasCurrentYearBudget;
+
+  const CurrentYearBudgetState(this.hasCurrentYearBudget);
+}
+
 /// State after a budget has been created and needs category input
 final class BudgetCreatedNeedsCategorization extends BudgetState {
   final Budget budget;

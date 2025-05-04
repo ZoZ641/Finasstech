@@ -6,7 +6,13 @@ import '../../domain/entities/budget.dart';
 class BudgetDashboard extends StatelessWidget {
   final Budget budget;
   final Map<String, double>? usage;
-  const BudgetDashboard({super.key, required this.budget, this.usage});
+  final bool isHistory;
+  const BudgetDashboard({
+    super.key,
+    required this.budget,
+    this.usage,
+    this.isHistory = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,8 +37,10 @@ class BudgetDashboard extends StatelessWidget {
                 return const SizedBox.shrink();
               }
 
-              // Safely get the usage amount with a default value of 0.0
-              final usageAmount = usage?[categoryKey] ?? 0.0;
+              // For historical budgets, use the usage from the category itself
+              // For current budgets, use the usage from the state
+              final usageAmount =
+                  isHistory ? category.usage : (usage?[categoryKey] ?? 0.0);
               final spent = usageAmount < 0 ? usageAmount * -1 : 0.0;
               final remainingAmount = category.amount - spent;
               final usagePercentage =

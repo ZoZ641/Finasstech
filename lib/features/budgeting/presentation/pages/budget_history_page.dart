@@ -24,90 +24,95 @@ class _BudgetHistoryPageState extends State<BudgetHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Budget History')),
-      body: BlocConsumer<BudgetBloc, BudgetState>(
-        listener: (context, state) {
-          if (state is BudgetError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          if (state is BudgetUsageCalculated) {
-            setState(() {
-              _budgetUsage = state.usageByCategory;
-            });
-          }
-        },
-        builder: (context, state) {
-          if (state is BudgetLoading) {
-            return const Center(child: Loader());
-          }
-
-          if (state is AllBudgetsLoaded) {
-            if (state.budgets.isEmpty) {
-              return const Center(child: Text('No budget history available'));
+    return PopScope(
+      onPopInvoked: (didPop) {
+        if (didPop) {
+          final bloc = context.read<BudgetBloc>();
+          bloc.add(const GetLatestBudgetEvent());
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Budget History')),
+        body: BlocConsumer<BudgetBloc, BudgetState>(
+          listener: (context, state) {
+            if (state is BudgetError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            if (state is BudgetUsageCalculated) {
+              setState(() {
+                _budgetUsage = state.usageByCategory;
+              });
+            }
+          },
+          builder: (context, state) {
+            if (state is BudgetLoading) {
+              return const Center(child: Loader());
             }
 
-            return ListView.builder(
-              itemCount: state.budgets.length,
-              itemBuilder: (context, index) {
-                final budget = state.budgets[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: ListTile(
-                    title: Text(
-                      'Budget for ${budget.createdAt.year}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+            if (state is AllBudgetsLoaded) {
+              if (state.budgets.isEmpty) {
+                return const Center(child: Text('No budget history available'));
+              }
+
+              return ListView.builder(
+                itemCount: state.budgets.length,
+                itemBuilder: (context, index) {
+                  final budget = state.budgets[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
                     ),
-                    subtitle: Text(
-                      'Created: ${_formatDate(budget.createdAt)}\n'
-                      'Forecasted Sales: £${budget.forecastedSales.toStringAsFixed(2)}',
-                    ),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      context.read<BudgetBloc>().add(
-                        CalculateBudgetUsageEvent(budget: budget),
-                      );
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => Scaffold(
-                                appBar: AppBar(
-                                  title: Text(
-                                    'Budget of ${budget.createdAt.year}',
+                    child: ListTile(
+                      title: Text(
+                        'Budget for ${budget.createdAt.year}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        'Created: ${_formatDate(budget.createdAt)}\n'
+                        'Forecasted Sales: £${budget.forecastedSales.toStringAsFixed(2)}',
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios),
+                      onTap: () {
+                        final bloc = context.read<BudgetBloc>();
+                        bloc.add(CalculateBudgetUsageEvent(budget: budget));
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => Scaffold(
+                                  appBar: AppBar(
+                                    title: Text(
+                                      'Budget of ${budget.createdAt.year}',
+                                    ),
+                                  ),
+                                  body: BudgetDashboard(
+                                    budget: budget,
+                                    usage: _budgetUsage,
+                                    isHistory: true,
                                   ),
                                 ),
-                                body: BudgetDashboard(
-                                  budget: budget,
-                                  usage: _budgetUsage,
-                                ),
-                              ),
-                        ),
-                      ).then((_) {
-                        if (mounted) {
-                          context.read<BudgetBloc>().add(
-                            const GetAllBudgetsEvent(),
-                          );
-                        }
-                      });
-                    },
-                  ),
-                );
-              },
-            );
-          }
+                          ),
+                        ).then((_) {
+                          if (mounted) {
+                            bloc.add(const GetAllBudgetsEvent());
+                          }
+                        });
+                      },
+                    ),
+                  );
+                },
+              );
+            }
 
-          return const Center(child: Text('No budget history available'));
-        },
+            return const Center(child: Text('No budget history available'));
+          },
+        ),
       ),
     );
   }

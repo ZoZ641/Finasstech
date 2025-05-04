@@ -10,6 +10,11 @@ final class CheckForExistingBudgetData extends BudgetEvent {
   const CheckForExistingBudgetData();
 }
 
+/// Checks if a budget exists for the current year
+final class CheckCurrentYearBudgetEvent extends BudgetEvent {
+  const CheckCurrentYearBudgetEvent();
+}
+
 /// Creates an initial budget with last year's sales as base
 final class CreateInitialBudgetEvent extends BudgetEvent {
   final double lastYearSales;

@@ -232,8 +232,10 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   /// If there is an error during the calculation, it throws a [ServerException].
   Future<void> calculateBudgetUsageFromExpenses() async {
     if (budgetBox.isEmpty) return;
-    //TODO: call get latest budget
-    final budget = budgetBox.getAt(0)!;
+
+    // Get the latest budget instead of always using the first one
+    final latestBudget = await getLatestBudget();
+    if (latestBudget == null) return;
 
     final Map<String, double> usageMap = {};
 
@@ -243,30 +245,31 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
     for (final expense in transactionsBox.values.where(
       (e) => e.date.isAfter(thisYearStart) && e.date.isBefore(thisYearEnd),
     )) {
-      if (!usageMap.containsKey(expense.category)) {
-        usageMap[expense.category] = 0;
+      if (!usageMap.containsKey(expense.category.toLowerCase())) {
+        usageMap[expense.category.toLowerCase()] = 0;
       }
-      usageMap[expense.category] = usageMap[expense.category]! + expense.amount;
+      usageMap[expense.category.toLowerCase()] =
+          usageMap[expense.category.toLowerCase()]! + expense.amount;
     }
 
     final updatedCategories = {
-      for (final entry in budget.categories.entries)
+      for (final entry in latestBudget.categories.entries)
         entry.key: BudgetCategoryModel(
           name: entry.value.name,
           percentage: entry.value.percentage,
           amount: entry.value.amount,
-          usage: usageMap[entry.key] ?? 0.0,
+          usage: usageMap[entry.key.toLowerCase()] ?? 0.0,
           minRecommendedPercentage: entry.value.minRecommendedPercentage,
           maxRecommendedPercentage: entry.value.maxRecommendedPercentage,
         ),
     };
 
-    final updatedBudget = budget.copyWith(
+    final updatedBudget = latestBudget.copyWith(
       categories: updatedCategories,
       updatedAt: DateTime.now(),
     );
 
-    await budgetBox.putAt(0, updatedBudget);
+    await budgetBox.put(latestBudget.id, updatedBudget);
   }
 
   @override

@@ -12,12 +12,14 @@ import '../../domain/usecases/create_initial_budget.dart';
 import '../../domain/usecases/get_Latest_Budget.dart';
 import '../../domain/usecases/get_all_budgets.dart';
 import '../../domain/usecases/update_budget_categories.dart';
+import '../../domain/usecases/check_current_year_budget.dart';
 
 part 'budget_event.dart';
 part 'budget_state.dart';
 
 class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
   final CheckExistingBudgetData checkExistingBudgetData;
+  final CheckCurrentYearBudget checkCurrentYearBudget;
   final CreateInitialBudget createInitialBudget;
   final CreateBudgetWithProphet createBudgetWithProphet;
   final UpdateBudgetCategories updateBudgetCategories;
@@ -29,6 +31,7 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
 
   BudgetBloc({
     required this.checkExistingBudgetData,
+    required this.checkCurrentYearBudget,
     required this.createInitialBudget,
     required this.createBudgetWithProphet,
     required this.updateBudgetCategories,
@@ -37,6 +40,7 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     required this.getAllBudgets,
   }) : super(BudgetChecking()) {
     on<CheckForExistingBudgetData>(_onCheckForExistingBudgetData);
+    on<CheckCurrentYearBudgetEvent>(_onCheckCurrentYearBudget);
     on<CreateInitialBudgetEvent>(_onCreateInitialBudget);
     on<CreateBudgetWithProphetEvent>(_onCreateBudgetWithProphet);
     on<UpdateBudgetCategoriesEvent>(_onUpdateBudgetCategories);
@@ -204,6 +208,25 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     result.fold(
       (failure) => emit(BudgetError(message: failure.message)),
       (budgets) => emit(AllBudgetsLoaded(budgets)),
+    );
+  }
+
+  /// Handles [CheckCurrentYearBudgetEvent] events by checking if there is a budget
+  /// for the current year. Emits a [BudgetLoading] state while the check is in
+  /// progress. If the check is successful, it emits a [CurrentYearBudgetState]
+  /// with a boolean indicating whether a budget exists for the current year.
+  /// In case of a failure, it emits a [BudgetError] state with an error message.
+  Future<void> _onCheckCurrentYearBudget(
+    CheckCurrentYearBudgetEvent event,
+    Emitter<BudgetState> emit,
+  ) async {
+    emit(BudgetLoading());
+    final result = await checkCurrentYearBudget(NoParams());
+
+    result.fold(
+      (failure) => emit(BudgetError(message: failure.message)),
+      (hasCurrentYearBudget) =>
+          emit(CurrentYearBudgetState(hasCurrentYearBudget)),
     );
   }
 }

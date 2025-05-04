@@ -36,48 +36,26 @@ class _BudgetPageState extends State<BudgetPage> {
     } else {
       _latestBudget = widget.budget;
       _isLoading = false;
+      // Calculate usage for the budget passed via constructor
+      context.read<BudgetBloc>().add(
+        CalculateBudgetUsageEvent(budget: widget.budget!),
+      );
     }
-    _checkYearEnd();
+    // Check for current year budget instead of direct check
+    context.read<BudgetBloc>().add(const CheckCurrentYearBudgetEvent());
   }
 
   void _checkYearEnd() {
     final now = DateTime.now();
-    if (now.month == 1 && now.day >= 1 && now.day <= 31) {
+    if (_latestBudget != null && _latestBudget!.createdAt.year < now.year) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        showDialog(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: const Text('Year End Budget Creation'),
-                content: const Text(
-                  'The current year is ending. Would you like to create a new budget for the upcoming year?',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Later'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreateBudgetPage(),
-                        ),
-                      );
-                    },
-                    child: const Text('Create Now'),
-                  ),
-                ],
-              ),
+        _notificationService.showNotification(
+          title: "Create New Budget",
+          body:
+              "It seems your latest budget was created last year. Create a new budget for the current year.",
+          isYearly: true,
         );
       });
-      _notificationService.showNotification(
-        title: "Year End Budget Creation",
-        body:
-            "The current year is ending. Would you like to create a new budget for the upcoming year?",
-      );
     }
   }
 
@@ -109,39 +87,34 @@ class _BudgetPageState extends State<BudgetPage> {
             if (state.hasExistingData == true) {
               context.read<BudgetBloc>().add(const GetLatestBudgetEvent());
             }
-          }
-
-          if (state is BudgetCreatedNeedsCategorization) {
+          } else if (state is CurrentYearBudgetState) {
+            if (!state.hasCurrentYearBudget) {
+              _notificationService.showNotification(
+                title: "Create New Budget",
+                body:
+                    "You haven't created a budget for the current year yet. Create a new budget to stay on track.",
+                isYearly: true,
+              );
+            }
+          } else if (state is BudgetLoaded) {
             setState(() {
-              _isLoading = false;
               _latestBudget = state.budget;
+              _isLoading = false;
             });
+            // Trigger usage calculation whenever a budget is loaded
+            context.read<BudgetBloc>().add(
+              CalculateBudgetUsageEvent(budget: state.budget),
+            );
+          } else if (state is BudgetEmpty) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => CreateBudgetPage()),
+              MaterialPageRoute(builder: (context) => const CreateBudgetPage()),
             );
-          }
-
-          if (state is BudgetLoaded ||
-              state is BudgetCreated ||
-              state is BudgetUpdated) {
-            final budget = (state as dynamic).budget;
-            setState(() {
-              _latestBudget = budget;
-              _isLoading = false;
-            });
-            context.read<BudgetBloc>().add(
-              CalculateBudgetUsageEvent(budget: budget),
-            );
-          }
-
-          if (state is BudgetUsageCalculated) {
+          } else if (state is BudgetUsageCalculated) {
             setState(() {
               _budgetUsage = state.usageByCategory;
             });
-          }
-
-          if (state is BudgetError) {
+          } else if (state is BudgetError) {
             setState(() {
               _isLoading = false;
             });
@@ -179,7 +152,11 @@ class _BudgetPageState extends State<BudgetPage> {
             );
           }
 
-          return BudgetDashboard(budget: _latestBudget!, usage: _budgetUsage);
+          return BudgetDashboard(
+            budget: _latestBudget!,
+            usage: _budgetUsage,
+            isHistory: false,
+          );
         },
       ),
     );
