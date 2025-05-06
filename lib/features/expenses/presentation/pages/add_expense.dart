@@ -1,6 +1,8 @@
 import 'package:finasstech/core/utils/money_formater.dart';
+import 'package:finasstech/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:timezone/timezone.dart';
 import 'package:uuid/uuid.dart';
 import 'package:finasstech/core/services/notification_service.dart';
 
@@ -65,14 +67,22 @@ class _AddExpensePageState extends State<AddExpensePage> {
   }
 
   Future<void> _scheduleRecurringNotification(Expense expense) async {
+    // Skip if expense is not recurring
     if (expense.recurrence == 0) return;
 
+    // Generate a unique notification ID based on the expense ID
     final notificationId = _notificationService
         .generateNotificationIdFromUuidPartial(expense.id);
+
+    // Set notification content
     final title = 'Recurring Expense';
     final body =
-        'Hey you have a recurring ${expense.category} expense of £${expense.amount.toStringAsFixed(2)} to ${expense.vendor[0] + expense.vendor.substring(1).toLowerCase()}';
+        'Hey you have a recurring ${expense.category} expense of £${expense.amount.toStringAsFixed(2)} '
+        'to ${expense.vendor[0] + expense.vendor.substring(1).toLowerCase()}';
 
+    // Schedule the notification
+    // For weekly (recurrence = 1): schedule 7 days from expense date
+    // For monthly (recurrence = 2): schedule 30 days from expense date
     await _notificationService.showScheduleNotification(
       id: notificationId,
       title: title,
@@ -117,7 +127,10 @@ class _AddExpensePageState extends State<AddExpensePage> {
         );
       }
 
-      Navigator.pop(context);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MyApp()),
+      );
     }
   }
 

@@ -66,11 +66,9 @@ class ExpenseBloc extends Bloc<ExpenseEvent, ExpenseState> {
     final result = await addExpense(event.expense);
     result.fold(
       (failure) {
-        print('Add Failed: ${failure.message}');
         emit(ExpenseFailure(failure.message));
       },
       (_) {
-        print('Add Success');
         // Preserve existing expenses in state
         if (currentState is ExpenseLoaded) {
           // Add the new expense to the list
