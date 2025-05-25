@@ -1,3 +1,5 @@
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
+import 'package:finasstech/core/utils/show_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -19,16 +21,22 @@ class _AiInsightsPageState extends State<AiInsightsPage> {
   bool _isThinking = false;
 
   void _sendMessage() {
+    // Get and clean the input message
     final message = _messageController.text.trim();
+
+    // Only proceed if there is actual content to send
     if (message.isNotEmpty) {
-      BlocProvider.of<GeminiBloc>(context).add(SendMessage(message: message));
+      // Add the user message to chat immediately
       setState(() {
         _messages.add(ChatMessage(text: message, isUser: true));
         _messageController.clear();
         _isThinking = true;
       });
 
-      // Scroll to show the thinking indicator
+      // Dispatch the message to the GeminiBloc for processing
+      BlocProvider.of<GeminiBloc>(context).add(SendMessage(message: message));
+
+      // Schedule scrolling to the bottom of the chat after the next frame
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
@@ -70,9 +78,16 @@ class _AiInsightsPageState extends State<AiInsightsPage> {
                 } else if (state is GeminiError) {
                   setState(() {
                     _isThinking = false;
+                    // Remove the last user message if it exists
+                    if (_messages.isNotEmpty && _messages.last.isUser) {
+                      _messages.removeLast();
+                    }
                   });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: ${state.message}')),
+                  showSnackBar(
+                    context,
+                    'Error',
+                    state.message,
+                    ContentType.failure,
                   );
                 } else if (state is GeminiLoading) {
                   setState(() {

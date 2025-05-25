@@ -7,5 +7,8 @@ sealed class GeminiEvent {}
 final class SendMessage extends GeminiEvent {
   final String message;
 
+  /// Creates a new [SendMessage] event with the specified message
+  ///
+  /// [message] - The message to be sent to the Gemini API
   SendMessage({required this.message});
 }
