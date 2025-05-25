@@ -78,54 +78,6 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
     });
   }
 
-  /*  // Refresh metrics using cached expenses (used when expense updates happen)
-  Future<void> _onRefreshDashboardMetrics(
-    RefreshDashboardMetrics event,
-    Emitter<DashboardState> emit,
-  ) async {
-    if (_cachedExpenses.isEmpty) {
-      // If no cached expenses, fetch them first
-      add(CalculateDashboardMetrics());
-      return;
-    }
-
-    if (state is! DashboardLoaded) {
-      emit(DashboardLoading());
-    }
-
-    // Get current periods from state or use defaults
-    TimePeriod incomePeriod = TimePeriod.week;
-    TimePeriod expensesPeriod = TimePeriod.week;
-    TimePeriod cashFlowPeriod = TimePeriod.week;
-
-    if (state is DashboardLoaded) {
-      final currentState = state as DashboardLoaded;
-      incomePeriod = currentState.incomePeriod;
-      expensesPeriod = currentState.expensesPeriod;
-      cashFlowPeriod = currentState.cashFlowPeriod;
-    }
-
-    final metrics = _calculateAllMetrics(
-      incomePeriod: incomePeriod,
-      expensesPeriod: expensesPeriod,
-      cashFlowPeriod: cashFlowPeriod,
-    );
-
-    emit(
-      DashboardLoaded(
-        income: metrics.income,
-        expenses: metrics.expenses,
-        cashFlow: metrics.cashFlow,
-        incomeData: metrics.incomeData,
-        expensesData: metrics.expensesData,
-        cashFlowData: metrics.cashFlowData,
-        incomePeriod: incomePeriod,
-        expensesPeriod: expensesPeriod,
-        cashFlowPeriod: cashFlowPeriod,
-      ),
-    );
-  }*/
-
   // Change time period for a specific widget only
   Future<void> _onChangeDashboardWidgetTimePeriod(
     ChangeDashboardWidgetTimePeriod event,
@@ -401,7 +353,6 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
 
   List<FlSpot> _generateGraphData(List<Expense> expenses, TimePeriod period) {
     if (expenses.isEmpty) {
-      print('No expenses for period: $period, returning empty data points');
       return _generateEmptyDataPoints(period);
     }
 
@@ -427,11 +378,10 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       case TimePeriod.month:
         // Generate 4 data points for the current month (weekly sums)
         final monthStart = DateTime(now.year, now.month, 1);
-        print('Month view - start date: $monthStart');
+
         for (int i = 0; i < 4; i++) {
           final weekStart = monthStart.add(Duration(days: i * 7));
           dataByDate[weekStart] = 0.0; // Initialize with 0
-          print('Month week $i: $weekStart initialized to 0.0');
         }
         break;
       case TimePeriod.quarter:
@@ -462,36 +412,15 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
       final date = _normalizeDate(expense.date, period);
       if (dataByDate.containsKey(date)) {
         dataByDate[date] = (dataByDate[date] ?? 0) + expense.amount;
-        if (period == TimePeriod.month) {
-          print(
-            'Month view - expense added: ${expense.date} normalized to $date, amount: ${expense.amount}, total: ${dataByDate[date]}',
-          );
-        }
-      } else if (period == TimePeriod.month) {
-        print(
-          'Month view - expense date not found in dataByDate: ${expense.date} normalized to $date',
-        );
       }
     }
 
     // Sort dates and create FlSpots
     final sortedDates = dataByDate.keys.toList()..sort();
-    if (period == TimePeriod.month) {
-      print('Month view - sorted dates: $sortedDates');
-    }
 
     final spots = <FlSpot>[];
     for (var i = 0; i < sortedDates.length; i++) {
       spots.add(FlSpot(i.toDouble(), dataByDate[sortedDates[i]] ?? 0));
-      if (period == TimePeriod.month) {
-        print(
-          'Month view - spot $i: ${i.toDouble()}, ${dataByDate[sortedDates[i]]}',
-        );
-      }
-    }
-
-    if (period == TimePeriod.month) {
-      print('Month view - final spots: $spots');
     }
 
     return spots;
@@ -512,18 +441,10 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
   }
 
   DateTime _normalizeDate(DateTime date, TimePeriod period) {
-    final now = DateTime.now();
     switch (period) {
       case TimePeriod.week:
-        // Week starts on Saturday (weekday 6 in Dart)
-        // Find the most recent Saturday for this date
-        final int daysToSubtract =
-            date.weekday == 6 ? 0 : (date.weekday + 1) % 7;
-        return DateTime(
-          date.year,
-          date.month,
-          date.day,
-        ).subtract(Duration(days: daysToSubtract));
+        // For week view, we want to group by day
+        return DateTime(date.year, date.month, date.day);
       case TimePeriod.month:
         // Calculate which week of the month this date belongs to
         final monthStart = DateTime(date.year, date.month, 1);

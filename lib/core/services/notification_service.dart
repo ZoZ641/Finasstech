@@ -6,6 +6,26 @@ import 'dart:io' show Platform;
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+/// A service class that handles local notifications in the app.
+///
+/// This service provides functionality for:
+/// - Initializing notification settings
+/// - Requesting notification permissions
+/// - Showing immediate notifications
+/// - Scheduling notifications
+/// - Managing notification channels
+/// - Handling notification taps
+///
+/// Usage:
+/// ```dart
+/// final notificationService = NotificationService();
+/// await notificationService.initNotification();
+/// await notificationService.requestPermissions(context);
+/// await notificationService.showNotification(
+///   title: 'Hello',
+///   body: 'This is a notification',
+/// );
+/// ```
 class NotificationService {
   final notificationPlugin = FlutterLocalNotificationsPlugin();
   static final NotificationService _instance = NotificationService._internal();
@@ -17,7 +37,14 @@ class NotificationService {
 
   bool get isInitialized => _isInitialized;
 
-  // Initialize
+  /// Initializes the notification service with platform-specific settings.
+  ///
+  /// This method:
+  /// - Sets up timezone support
+  /// - Configures Android and iOS notification settings
+  /// - Initializes the notification plugin
+  ///
+  /// Returns `true` if initialization was successful.
   Future<bool> initNotification() async {
     if (_isInitialized) return true;
 
@@ -64,7 +91,14 @@ class NotificationService {
     return true;
   }
 
-  // Check and request notification permissions
+  /// Requests necessary notification permissions from the user.
+  ///
+  /// This method:
+  /// - Requests basic notification permission
+  /// - For Android 12+, requests exact alarm permission
+  /// - Shows permission dialogs if needed
+  ///
+  /// Returns `true` if all permissions were granted.
   Future<bool> requestPermissions(BuildContext context) async {
     if (!_isInitialized) {
       await initNotification();
@@ -115,7 +149,12 @@ class NotificationService {
     return allGranted;
   }
 
-  // Show a dialog explaining why permission is needed
+  /// Shows a dialog explaining why a specific permission is needed.
+  ///
+  /// Parameters:
+  /// - [context]: The build context
+  /// - [permissionName]: The name of the permission
+  /// - [usageDescription]: Description of how the permission will be used
   void _showPermissionDialog(
     BuildContext context,
     String permissionName,
@@ -150,7 +189,10 @@ class NotificationService {
     );
   }
 
-  // Special dialog for exact alarm permission
+  /// Shows a special dialog for exact alarm permission on Android.
+  ///
+  /// This dialog explains why exact alarm permission is needed for scheduling
+  /// recurring notifications.
   void _showExactAlarmPermissionDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -193,7 +235,12 @@ class NotificationService {
     );
   }
 
-  //Notifications Detail Setup
+  /// Creates notification details with platform-specific settings.
+  ///
+  /// Parameters:
+  /// - [isYearly]: Whether this is a yearly budget notification
+  ///
+  /// Returns platform-specific notification details.
   NotificationDetails notificationDetails(bool isYearly) {
     return NotificationDetails(
       android: AndroidNotificationDetails(
@@ -210,7 +257,13 @@ class NotificationService {
     );
   }
 
-  //Show Notification
+  /// Shows an immediate notification.
+  ///
+  /// Parameters:
+  /// - [id]: The notification ID (defaults to 0)
+  /// - [isYearly]: Whether this is a yearly budget notification
+  /// - [title]: The notification title
+  /// - [body]: The notification body text
   Future<void> showNotification({
     int id = 0,
     bool isYearly = false,
@@ -228,13 +281,31 @@ class NotificationService {
     );
   }
 
-  // Fixed method to avoid RangeError
+  /// Generates a notification ID from a UUID string.
+  ///
+  /// This method ensures the ID is positive and within Int32 range.
+  ///
+  /// Parameters:
+  /// - [uuidString]: The UUID string to convert
+  ///
+  /// Returns a valid notification ID.
   int generateNotificationIdFromUuidPartial(String uuidString) {
     // Convert UUID to a hash code, ensure it's positive and within Int32 range
     return uuidString.hashCode.abs() % 2147483647; // Max Int32 value
   }
 
-  //Schedule Notification
+  /// Schedules a notification for a specific date and time.
+  ///
+  /// Parameters:
+  /// - [id]: The notification ID
+  /// - [isYearly]: Whether this is a yearly budget notification
+  /// - [title]: The notification title
+  /// - [body]: The notification body text
+  /// - [dateTime]: When to show the notification
+  /// - [isMonthly]: Whether this is a monthly recurring notification
+  ///
+  /// The method handles timezone conversion and provides fallback mechanisms
+  /// if exact scheduling fails.
   Future<void> showScheduleNotification({
     required int id,
     bool isYearly = false,
@@ -248,10 +319,6 @@ class NotificationService {
       await initNotification();
     }
 
-    print(
-      "notification with title: $title and body: $body and time: ${dateTime.day}-${dateTime.month}-${dateTime.year}",
-    );
-
     // Convert id to string only once to avoid formatting issues
     final String idString = id.toString();
     final int notificationId = generateNotificationIdFromUuidPartial(idString);
@@ -264,14 +331,11 @@ class NotificationService {
       // Ensure the date is in the future
       final now = tz.TZDateTime.now(tz.local);
       if (scheduledDate.isBefore(now)) {
-        print("Warning: Scheduled date is in the past. Adjusted to future.");
         // Add one day if the time is in the past
         scheduledDate = scheduledDate.add(const Duration(days: 1));
       }
     } catch (e) {
       // Fallback if timezone conversion fails
-      print("Error converting to TZ datetime: $e");
-      final now = tz.TZDateTime.now(tz.local);
       scheduledDate = tz.TZDateTime(
         tz.local,
         dateTime.year,
@@ -301,7 +365,6 @@ class NotificationService {
 
       // If exact alarms fail, try to fall back to inexact scheduling
       if (e is PlatformException && e.code == 'exact_alarms_not_permitted') {
-        print("Exact alarms not permitted, falling back to inexact scheduling");
         try {
           return await notificationPlugin.zonedSchedule(
             notificationId,
@@ -331,6 +394,15 @@ class NotificationService {
     }
   }
 
+  /// Cancels a specific notification by its ID.
+  ///
+  /// This method:
+  /// - Converts the provided ID to a string
+  /// - Generates a notification ID from the string
+  /// - Cancels the notification using the generated ID
+  ///
+  /// Parameters:
+  /// - [id]: The ID of the notification to cancel
   Future<void> cancelNotification({required int id}) async {
     final String idString = id.toString();
     final int notificationId = generateNotificationIdFromUuidPartial(idString);
@@ -338,24 +410,14 @@ class NotificationService {
     return notificationPlugin.cancel(notificationId);
   }
 
+  /// Cancels all pending notifications.
+  ///
+  /// This method:
+  /// - Removes all scheduled notifications from the system
+  /// - Clears the notification queue
+  ///
+  /// Returns a [Future] that completes when all notifications are cancelled.
   Future<void> cancelAllNotifications() async {
     return notificationPlugin.cancelAll();
-  }
-
-  // Check if exact alarms are allowed
-  Future<bool> checkExactAlarmsPermission() async {
-    if (!Platform.isAndroid) return true;
-
-    try {
-      return await notificationPlugin
-              .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin
-              >()
-              ?.canScheduleExactNotifications() ??
-          false;
-    } catch (e) {
-      print("Error checking exact alarms permission: $e");
-      return false;
-    }
   }
 }

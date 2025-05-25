@@ -1,7 +1,6 @@
 import 'package:finasstech/core/theme/app_pallete.dart';
 import 'package:flutter/material.dart';
 
-//ToDo: change the loader to loading_animation_widget
 class Loader extends StatelessWidget {
   const Loader({super.key});
 

@@ -1,4 +1,3 @@
-import 'package:finasstech/core/services/notification_service.dart';
 import 'package:finasstech/features/dashboard/presentaion/widgets/graph_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,6 +23,11 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
     _checkYearEnd();
   }
 
+  /// Checks if the current year is different from the budget's creation year.
+  /// If it is, shows a dialog prompting the user to create a new budget.
+  ///
+  /// This method is called during initialization to ensure users are prompted
+  /// to create a new budget at the start of each year.
   void _checkYearEnd() {
     final now = DateTime.now();
     final budgetState = context.read<BudgetBloc>().state;
@@ -60,6 +64,12 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
     }
   }
 
+  /// Handles the change of time period for the income widget.
+  ///
+  /// This method dispatches a [ChangeDashboardWidgetTimePeriod] event to the [DashboardBloc]
+  /// with the specified [period] for the income widget type.
+  ///
+  /// @param period The new time period to be applied to the income widget
   void _handleIncomeTimePeriodChanged(TimePeriod period) {
     context.read<DashboardBloc>().add(
       ChangeDashboardWidgetTimePeriod(
@@ -69,6 +79,12 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
     );
   }
 
+  /// Handles the change of time period for the expenses widget.
+  ///
+  /// This method dispatches a [ChangeDashboardWidgetTimePeriod] event to the [DashboardBloc]
+  /// with the specified [period] for the expenses widget type.
+  ///
+  /// @param period The new time period to be applied to the expenses widget
   void _handleExpensesTimePeriodChanged(TimePeriod period) {
     context.read<DashboardBloc>().add(
       ChangeDashboardWidgetTimePeriod(
@@ -78,6 +94,12 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
     );
   }
 
+  /// Handles the change of time period for the cash flow widget.
+  ///
+  /// This method dispatches a [ChangeDashboardWidgetTimePeriod] event to the [DashboardBloc]
+  /// with the specified [period] for the cash flow widget type.
+  ///
+  /// @param period The new time period to be applied to the cash flow widget
   void _handleCashFlowTimePeriodChanged(TimePeriod period) {
     context.read<DashboardBloc>().add(
       ChangeDashboardWidgetTimePeriod(
@@ -111,14 +133,14 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
           appBar: AppBar(title: const Text("Dashboard")),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
+              // Capture the bloc reference before the async gap
+              final dashboardBloc = context.read<DashboardBloc>();
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => AddExpensePage()),
               ).then((_) {
                 if (mounted) {
-                  context.read<DashboardBloc>().add(
-                    CalculateDashboardMetrics(),
-                  );
+                  dashboardBloc.add(CalculateDashboardMetrics());
                 }
               });
             },
@@ -133,40 +155,10 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
               } else if (state is DashboardLoaded) {
                 return ListView(
                   children: [
-                    // ElevatedButton(
-                    //   onPressed: () {
-                    //     NotificationService().showScheduleNotification(
-                    //       id: 3,
-                    //       title: "Test",
-                    //       body: "test schedule notification",
-                    //       dateTime: DateTime(2025, DateTime.may, 2, 3, 12),
-                    //     );
-                    //     /*showDialog(
-                    //       context: context,
-                    //       builder:
-                    //           (context) => AlertDialog(
-                    //             title: Text("test"),
-                    //             content: Text('test content'),
-                    //             actions: [
-                    //               TextButton(
-                    //                 onPressed: () => Navigator.pop(context),
-                    //                 child: const Text('Later'),
-                    //               ),
-                    //               TextButton(
-                    //                 onPressed: () => Navigator.pop(context),
-                    //                 child: const Text('Not later'),
-                    //               ),
-                    //             ],
-                    //           ),
-                    //     );*/
-                    //   },
-                    //   child: Text('Show Dialogue'),
-                    // ),
                     GraphWidget(
                       title: 'Income',
                       amount: state.income.toStringAsFixed(0),
                       isGraph: false,
-                      //initialTimePeriod: state.incomePeriod,
                       onTimePeriodChanged: _handleIncomeTimePeriodChanged,
                     ),
                     GraphWidget(
@@ -176,16 +168,15 @@ class _DashboardPageState extends State<DashboardPage> with RouteAware {
                               : state.expenses * -1)
                           .toStringAsFixed(0),
                       data: state.expensesData,
-                      //initialTimePeriod: state.expensesPeriod,
                       onTimePeriodChanged: _handleExpensesTimePeriodChanged,
                     ),
                     GraphWidget(
                       title: 'Cash Flow',
                       amount: state.cashFlow.toStringAsFixed(0),
                       data: state.cashFlowData,
-                      //initialTimePeriod: state.cashFlowPeriod,
                       onTimePeriodChanged: _handleCashFlowTimePeriodChanged,
                     ),
+                    SizedBox(height: 70),
                   ],
                 );
               }

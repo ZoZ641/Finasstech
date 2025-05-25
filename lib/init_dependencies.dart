@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:finasstech/core/common/cubits/app_user/app_user_cubit.dart';
 import 'package:finasstech/core/services/notification_service.dart';
 import 'package:finasstech/features/auth/data/datasources/auth_firebase_data_source.dart';
@@ -15,7 +13,6 @@ import 'package:finasstech/features/budgeting/presentation/bloc/budget_bloc.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:fpdart/fpdart.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_ce_flutter/adapters.dart';
 import 'package:path_provider/path_provider.dart';
@@ -42,7 +39,7 @@ import 'features/expenses/domain/usecases/get_all_expenses.dart';
 import 'features/expenses/domain/usecases/update_expense.dart';
 import 'features/expenses/presentation/bloc/expense_bloc.dart';
 import 'firebase_options.dart';
-import 'hive/hive_adapters.dart';
+import 'core/database/hive/hive_adapters.dart';
 
 final serviceLocator = GetIt.instance;
 
@@ -59,45 +56,8 @@ Future<void> initDependencies() async {
   await Hive.openBox<User>('user');
   // Budget feature dependencies
   final budgetBox = await Hive.openBox<BudgetModel>('budgets');
-  //budgetBox.clear();
-
-  //print(budgetBox.keys);
-  //print("2025 budget");
-  //print(budgetBox.get('budget_1746367201793')?.toMap());
-  //print("2026 budget");
-  //print(budgetBox.get('budget_1767712679130')?.toMap());
   final expensesBox = await Hive.openBox<ExpenseModel>('expenses');
-  //print('expense keys ${expensesBox.keys}');
-  //print(expensesBox.get('10c9e1df-e6e4-4069-8ba0-61bb9ab6997c')?.date);
-  /*print(
-    'isBefore ${DateTime(DateTime.now().month + 1)} && isAfter ${DateTime(DateTime.now().month - 1)}',
-  );*/
-  /*final now = DateTime.now();
-  final startOfMonth = DateTime(now.year, now.month, 1);
-  final startOfNextMonth = DateTime(now.year, now.month + 1, 1);
-  print(
-    'salaries filter for month ${DateTime.now().month} ${expensesBox.values.where((e) => e.category == 'Sales' && e.date.isBefore(startOfNextMonth) && !e.date.isBefore(startOfMonth)).map((e) => '${e.amount} ${e.date.toIso8601String()}')}',
-  );*/
-  /*final now = DateTime.now();
-  final thisYearStart = DateTime(now.year);
-  final thisYearEnd = DateTime(now.year + 1);
 
-  final filteredSales = expensesBox.values.where(
-    (e) =>
-        e.category.toLowerCase() == 'sales' &&
-        e.date.isAfter(thisYearStart) &&
-        e.date.isBefore(thisYearEnd),
-  );
-
-  final salesList =
-      filteredSales
-          .map((e) => {"amount": e.amount, "date": e.date.toIso8601String()})
-          .toList();
-  print('filteredSales ${jsonEncode(salesList)}');*/
-
-  //expensesBox.clear();
-  // final budget = budgetBox.values.toList();
-  // print(budget);
   //DotEnv initialize
   await dotenv.load(fileName: ".env");
   //auth feature dependencies

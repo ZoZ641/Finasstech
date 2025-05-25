@@ -116,7 +116,7 @@ class _GraphWidgetState extends State<GraphWidget> {
         return '';
       case TimePeriod.quarter:
         final now = DateTime.now();
-        final quarterStartMonth = ((now.month - 1) ~/ 3) * 3 + 1;
+        final quarterStartMonth = ((now.month - 1) ~/ 3) * 3;
         final months = [
           'Jan',
           'Feb',
@@ -132,7 +132,7 @@ class _GraphWidgetState extends State<GraphWidget> {
           'Dec',
         ];
         if (value.toInt() >= 0 && value.toInt() < 3) {
-          return months[quarterStartMonth - 1 + value.toInt()];
+          return months[quarterStartMonth + value.toInt()];
         }
         return '';
       case TimePeriod.year:
