@@ -3,7 +3,6 @@ import '../../../../core/theme/app_pallete.dart';
 import '../../data/models/budget_category_model.dart';
 import '../../domain/entities/budget.dart';
 import 'budget_category_item_create.dart';
-import 'budget_category_item_settings.dart';
 
 class BudgetCategoriesScreen extends StatelessWidget {
   final Budget budget;
@@ -221,158 +220,80 @@ class BudgetCategoriesScreen extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final key = categories.keys.elementAt(index);
                         final category = categories[key]!;
-
-                        if (isSettingsPage) {
-                          // Use the settings version for the settings page
-                          return BudgetCategoryItemSettings(
-                            key: ValueKey(
-                              key,
-                            ), // Add key for proper identification
-                            category: category,
-                            onNameChanged: (newName) {
-                              if (newName != key && newName.isNotEmpty) {
-                                // If the name has changed, we need to handle it specially
-                                if (!categories.containsKey(newName)) {
-                                  // Create a new category with the new name
-                                  final updatedCategory = category.copyWith(
-                                    name: newName,
-                                  );
-
-                                  // Remove the old category and add the new one with the new key
-                                  onCategoryDeleted(key);
-                                  onCategoryAdded(updatedCategory);
-                                } else {
-                                  // Show an error if the new name already exists
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'A category with this name already exists',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                            onMinMaxChanged: (min, max) {
-                              onCategoryChanged(
-                                key,
-                                category.copyWith(
-                                  minRecommendedPercentage: min,
-                                  maxRecommendedPercentage: max,
-                                ),
-                              );
-                            },
-                            onDelete: () {
-                              // Confirm deletion
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: const Text('Delete Category'),
-                                    content: Text(
-                                      'Are you sure you want to delete "${category.name}"?',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed:
-                                            () => Navigator.of(context).pop(),
-                                        child: const Text('Cancel'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                          onCategoryDeleted(key);
-                                        },
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: Colors.red,
-                                        ),
-                                        child: const Text('Delete'),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                          );
-                        } else {
-                          // Add delete capability for budget creation
-                          return Stack(
-                            children: [
-                              BudgetCategoryItemCreate(
-                                key: ValueKey(key),
-                                category: category,
-                                forecastedSales: budget.forecastedSales,
-                                onPercentageChanged: (newPercentage) {
-                                  final updatedAmount =
-                                      budget.forecastedSales *
-                                      (newPercentage / 100);
-                                  onCategoryChanged(
-                                    key,
-                                    category.copyWith(
-                                      percentage: newPercentage,
-                                      amount: updatedAmount,
-                                    ),
-                                  );
-                                },
-                                onAmountChanged: (newAmount) {
-                                  final newPercentage =
-                                      (newAmount / budget.forecastedSales) *
-                                      100;
-                                  onCategoryChanged(
-                                    key,
-                                    category.copyWith(
-                                      amount: newAmount,
-                                      percentage: newPercentage,
-                                    ),
-                                  );
-                                },
-                              ),
-                              Positioned(
-                                top: 8,
-                                right: 8,
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
+                        // Add delete capability for budget creation
+                        return Stack(
+                          children: [
+                            BudgetCategoryItemCreate(
+                              key: ValueKey(key),
+                              category: category,
+                              forecastedSales: budget.forecastedSales,
+                              onPercentageChanged: (newPercentage) {
+                                final updatedAmount =
+                                    budget.forecastedSales *
+                                    (newPercentage / 100);
+                                onCategoryChanged(
+                                  key,
+                                  category.copyWith(
+                                    percentage: newPercentage,
+                                    amount: updatedAmount,
                                   ),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: const Text('Delete Category'),
-                                          content: Text(
-                                            'Are you sure you want to delete "${category.name}"?',
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed:
-                                                  () =>
-                                                      Navigator.of(
-                                                        context,
-                                                      ).pop(),
-                                              child: const Text('Cancel'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                                onCategoryDeleted(key);
-                                              },
-                                              style: TextButton.styleFrom(
-                                                foregroundColor: Colors.red,
-                                              ),
-                                              child: const Text('Delete'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  },
+                                );
+                              },
+                              onAmountChanged: (newAmount) {
+                                final newPercentage =
+                                    (newAmount / budget.forecastedSales) * 100;
+                                onCategoryChanged(
+                                  key,
+                                  category.copyWith(
+                                    amount: newAmount,
+                                    percentage: newPercentage,
+                                  ),
+                                );
+                              },
+                            ),
+                            Positioned(
+                              top: 13,
+                              right: 8,
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: AppPallete.errorColor,
                                 ),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: const Text('Delete Category'),
+                                        content: Text(
+                                          'Are you sure you want to delete "${category.name}"?',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed:
+                                                () =>
+                                                    Navigator.of(context).pop(),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                              onCategoryDeleted(key);
+                                            },
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: Colors.red,
+                                            ),
+                                            child: const Text('Delete'),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
                               ),
-                            ],
-                          );
-                        }
+                            ),
+                          ],
+                        );
                       },
                     ),
           ),

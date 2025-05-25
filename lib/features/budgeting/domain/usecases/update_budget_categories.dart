@@ -23,6 +23,7 @@ class UpdateBudgetCategories
   }
 }
 
+/// Helper class to pass parameters to the UpdateBudgetCategories use case.
 class UpdateBudgetCategoriesParams {
   final String budgetId;
   final Map<String, BudgetCategory> categories;

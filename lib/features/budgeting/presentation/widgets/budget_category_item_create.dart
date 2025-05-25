@@ -82,7 +82,8 @@ class _BudgetCategoryItemCreateState extends State<BudgetCategoryItemCreate> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.category.name,
+                    widget.category.name[0].toUpperCase() +
+                        widget.category.name.substring(1).toLowerCase(),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

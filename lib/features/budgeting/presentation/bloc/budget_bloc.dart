@@ -1,7 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
-import '../../../../core/error/failures.dart';
 import '../../../../core/usecase/noparams.dart';
 import '../../domain/entities/budget.dart';
 import '../../domain/entities/budget_category.dart';
@@ -100,7 +99,6 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
     });
   }
 
-  //TODO: make this method only handles the forecasting then calls the _onCreateInitialBudget
   /// Handles [CreateBudgetWithProphetEvent] events by creating a new budget
   /// using Prophet forecasting and saving it to the repository. If the
   /// operation is successful, it emits a [BudgetCreatedNeedsCategorization]
@@ -191,6 +189,8 @@ class BudgetBloc extends Bloc<BudgetEvent, BudgetState> {
         (failure) => BudgetError(message: failure.message),
         (_) => BudgetUsageCalculated(
           budget: event.budget,
+          // Extract just the usage values from each category for easier access
+          // Creates a new map with the same keys but only the usage values
           usageByCategory: event.budget.categories.map(
             (k, v) => MapEntry(k, v.usage),
           ),

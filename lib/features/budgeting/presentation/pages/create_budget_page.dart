@@ -4,13 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 
-import '../../../../core/common/entities/user.dart';
 import '../../../../core/theme/app_pallete.dart';
 import '../../../../core/utils/money_formater.dart';
 import '../../../../core/utils/show_snackbar.dart';
 import '../../data/models/budget_category_model.dart';
 import '../../domain/entities/budget.dart';
-import '../../domain/entities/budget_category.dart';
 import '../bloc/budget_bloc.dart';
 import '../widgets/budget_categories.dart';
 import 'budget_dashboard.dart';
@@ -47,7 +45,6 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
     return BlocConsumer<BudgetBloc, BudgetState>(
       listener: (context, state) {
         if (state is BudgetCreatedNeedsCategorization) {
-          debugPrint('✅ Switching to Budget Category Setup View...');
           setState(() {
             // Create a new budget with the existing categories if we have them
             existingBudget = Budget(
@@ -61,11 +58,6 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
             categories = Map.from(existingBudget!.categories);
             awaitingCategorySetup = true;
           });
-
-          debugPrint('awaitingCategorySetup: $awaitingCategorySetup');
-          debugPrint('existingBudget: $existingBudget');
-          debugPrint('categories length: ${categories.length}');
-
           Future.microtask(() {
             if (mounted) {
               showSnackBar(
@@ -98,7 +90,6 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
                 false; // Reset this as we're creating a new budget
           });
         } else if (state is BudgetEmpty) {
-          debugPrint('🆕 No budget found, showing setup screen.');
           setState(() {
             existingBudget = null;
             categories = {};
@@ -107,15 +98,11 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
         }
       },
       builder: (context, state) {
-        debugPrint('awaitingCategorySetup: $awaitingCategorySetup');
-        debugPrint('existingBudget: $existingBudget');
-        debugPrint('categories length: ${categories.length}');
         if (state is BudgetLoading && !awaitingCategorySetup) {
           return const Loader();
         }
 
         if (awaitingCategorySetup && existingBudget != null) {
-          debugPrint('✅ Rendering BudgetCategoriesScreen');
           return BudgetCategoriesScreen(
             budget: existingBudget!,
             categories: categories,
@@ -214,7 +201,6 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
       return;
     }
 
-    debugPrint('📤 Dispatching CreateInitialBudgetEvent with: £$sales');
     context.read<BudgetBloc>().add(
       CreateInitialBudgetEvent(lastYearSales: sales),
     );
@@ -222,11 +208,9 @@ class _CreateBudgetPageState extends State<CreateBudgetPage> {
 
   void _saveCategories() {
     if (existingBudget == null) {
-      debugPrint('❗ Tried to save but existingBudget is null');
       return;
     }
 
-    debugPrint('💾 Saving budget with ${categories.length} categories...');
     context.read<BudgetBloc>().add(
       UpdateBudgetCategoriesEvent(
         budgetId: existingBudget!.id,

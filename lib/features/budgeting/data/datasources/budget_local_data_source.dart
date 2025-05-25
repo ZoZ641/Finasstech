@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:finasstech/core/error/exceptions.dart';
 import 'package:hive_ce/hive.dart';
 
@@ -67,20 +65,29 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
     required double lastYearSales,
   }) async {
     try {
+      // Calculate forecasted sales with a 20% growth projection from last year
       final forecastedSales = lastYearSales * 1.2;
+
+      // Generate default budget categories based on the forecasted sales amount
       final categories = _createDefaultBudgetCategories(forecastedSales);
+
+      // Create a new budget model with a unique timestamp-based ID
       final budget = BudgetModel(
-        //Todo change id to uuid
-        // id: Uuid().v4(),
-        id: 'budget_${DateTime.now().millisecondsSinceEpoch}',
+        id: 'budget_${DateTime.now().millisecondsSinceEpoch}', // Generate unique ID using current timestamp
         forecastedSales: forecastedSales,
         categories: categories,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+        createdAt: DateTime.now(), // Set creation timestamp
+        updatedAt:
+            DateTime.now(), // Set initial update timestamp (same as creation time)
       );
+
+      // Persist the budget to storage using the budget box (likely Hive or similar)
       await budgetBox.put(budget.id, budget);
+
+      // Return the newly created budget object
       return budget;
     } catch (e) {
+      // If any error occurs during budget creation, throw a server exception with details
       throw ServerException('Failed to create initial budget: ${e.toString()}');
     }
   }
@@ -132,20 +139,31 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
     required Map<String, BudgetCategoryModel> categories,
   }) async {
     try {
+      // Retrieve the existing budget from storage using its ID
       final budget = budgetBox.get(budgetId);
+
+      // Throw an exception if the budget doesn't exist
       if (budget == null) throw ServerException('Budget not found');
 
+      // Create a new budget model with updated categories
+      // Note: This creates a new instance rather than modifying the existing one,
+      // which follows immutability best practices
       final updatedBudget = BudgetModel(
-        id: budget.id,
-        forecastedSales: budget.forecastedSales,
-        categories: categories,
-        createdAt: budget.createdAt,
-        updatedAt: DateTime.now(),
+        id: budget.id, // Keep the same ID
+        forecastedSales: budget.forecastedSales, // Preserve forecasted sales
+        categories: categories, // Apply the new categories
+        createdAt: budget.createdAt, // Keep original creation timestamp
+        updatedAt: DateTime.now(), // Update the modification timestamp
       );
 
+      // Save the updated budget back to storage
       await budgetBox.put(budgetId, updatedBudget);
+
+      // Return the updated budget object to the caller
       return updatedBudget;
     } catch (e) {
+      // If any error occurs during the update, wrap it in a ServerException
+      // with context about what operation failed
       throw ServerException(
         'Failed to update budget categories: ${e.toString()}',
       );
@@ -162,11 +180,18 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   /// Throws a [ServerException] if there is an error during retrieval.
   Future<BudgetModel?> getLatestBudget() async {
     try {
+      // If there are no budgets stored, return null
       if (budgetBox.isEmpty) return null;
+
+      // Retrieve all budgets from the local storage
       final budgets = budgetBox.values.toList();
+
+      // Find the budget with the most recent `createdAt` timestamp
       final latestBudget = budgets.reduce(
         (curr, next) => curr.createdAt.isAfter(next.createdAt) ? curr : next,
       );
+
+      // Return the latest budget as a new [BudgetModel] object
       return BudgetModel(
         id: latestBudget.id,
         forecastedSales: latestBudget.forecastedSales,
@@ -175,6 +200,7 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
         updatedAt: latestBudget.updatedAt,
       );
     } catch (e) {
+      // Throw a [ServerException] if there is an error during retrieval
       throw ServerException('Failed to get budget: ${e.toString()}');
     }
   }
@@ -197,12 +223,10 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
     try {
       final now = DateTime.now();
       final thisYearStart = DateTime(now.year);
-      final thisYearEnd = DateTime(now.year + 1);
       final filteredSales = transactionsBox.values.where(
         (e) =>
             e.category.toLowerCase() == 'sales' &&
-            e.date.isAfter(thisYearStart) &&
-            e.date.isBefore(thisYearEnd),
+            e.date.isBefore(thisYearStart),
       );
 
       final salesList =
@@ -231,44 +255,58 @@ class BudgetLocalDataSourceImpl implements BudgetLocalDataSource {
   //
   /// If there is an error during the calculation, it throws a [ServerException].
   Future<void> calculateBudgetUsageFromExpenses() async {
+    // Early return if no budgets exist in the storage
     if (budgetBox.isEmpty) return;
 
-    // Get the latest budget instead of always using the first one
+    // Retrieve the most recent budget instead of using the first one
     final latestBudget = await getLatestBudget();
     if (latestBudget == null) return;
 
+    // Initialize a map to track expense totals by category
     final Map<String, double> usageMap = {};
 
+    // Define the current year's date range
     final now = DateTime.now();
-    final thisYearStart = DateTime(now.year);
-    final thisYearEnd = DateTime(now.year + 1);
+    final thisYearStart = DateTime(now.year); // January 1st of current year
+    final thisYearEnd = DateTime(now.year + 1); // January 1st of next year
+
+    // Loop through all transactions that fall within the current year
     for (final expense in transactionsBox.values.where(
       (e) => e.date.isAfter(thisYearStart) && e.date.isBefore(thisYearEnd),
     )) {
+      // Initialize category in the usage map if it doesn't exist yet
       if (!usageMap.containsKey(expense.category.toLowerCase())) {
         usageMap[expense.category.toLowerCase()] = 0;
       }
+
+      // Add this expense amount to the running total for its category
+      // The '!' tells Dart that we're certain the key exists (we just ensured it above)
       usageMap[expense.category.toLowerCase()] =
           usageMap[expense.category.toLowerCase()]! + expense.amount;
     }
 
+    // Create updated category models with the calculated usage values
     final updatedCategories = {
       for (final entry in latestBudget.categories.entries)
         entry.key: BudgetCategoryModel(
           name: entry.value.name,
           percentage: entry.value.percentage,
           amount: entry.value.amount,
+          // Apply the calculated usage from the usageMap, or 0.0 if none found
           usage: usageMap[entry.key.toLowerCase()] ?? 0.0,
+          // Preserve the recommended percentage ranges from the original category
           minRecommendedPercentage: entry.value.minRecommendedPercentage,
           maxRecommendedPercentage: entry.value.maxRecommendedPercentage,
         ),
     };
 
+    // Create a copy of the original budget with updated categories and timestamp
     final updatedBudget = latestBudget.copyWith(
       categories: updatedCategories,
-      updatedAt: DateTime.now(),
+      updatedAt: DateTime.now(), // Update the last modified timestamp
     );
 
+    // Save the updated budget back to storage using the same ID
     await budgetBox.put(latestBudget.id, updatedBudget);
   }
 
