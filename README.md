@@ -134,7 +134,7 @@ lib/
 - **Project Title**: AI-Powered Budget Planning Assistant
 - **Student Name**: Zeyad Hassan Amin
 - **Student ID**: 21511153
-- **Module**: TM471 – Final Year Project
+- **Module**: TM471 – Graduation Project
 - **University**: Arab Open University – Egypt
 - **Supervisor**: Dr. Ibrahim Mohamed El-Hasnony
 - **Year**: 2025
