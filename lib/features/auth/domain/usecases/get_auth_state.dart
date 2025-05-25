@@ -5,5 +5,5 @@ class GetAuthStateChanges {
   final AuthRepository authRepository;
   GetAuthStateChanges(this.authRepository);
 
-  Stream<User?> call() => authRepository.authStateChanges();
+  Stream<User?> call() => authRepository.idTokenChanges();
 }

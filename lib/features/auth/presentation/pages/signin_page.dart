@@ -7,7 +7,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/common/widgets/loader.dart';
 import '../../../../core/utils/show_snackbar.dart';
 import '../widgets/auth_field.dart';
-import '../widgets/google_apple_sign.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -42,7 +41,7 @@ class _SignUpPageState extends State<SignInPage> {
                 showSnackBar(
                   context,
                   'error',
-                  state.message,
+                  'Email or password is incorrect',
                   ContentType.failure,
                 );
               }
@@ -68,12 +67,13 @@ class _SignUpPageState extends State<SignInPage> {
                     Column(
                       children: [
                         AuthField(
-                          hintText: "Email",
+                          labelText: "Email",
+                          hintText: "james.madison@examplepetstore.com",
                           controller: emailController,
                         ),
                         const SizedBox(height: 15),
                         AuthField(
-                          hintText: "Password",
+                          labelText: "Password",
                           controller: passwordController,
                           isPassword: true,
                         ),
@@ -118,15 +118,7 @@ class _SignUpPageState extends State<SignInPage> {
                         ),
                       ],
                     ),
-
-                    //ToDO decide wither you will add this feature or not
-                    /*Text("Forgot Password?",
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(
-                  height: 15,
-                ),*/
                     const SizedBox(height: 15),
-                    //GoogleAppleSign(),
                   ],
                 ),
               );

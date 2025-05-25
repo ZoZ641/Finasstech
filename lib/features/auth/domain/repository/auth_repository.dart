@@ -18,7 +18,7 @@ abstract interface class AuthRepository {
   });
 
   ///Check if the user is authenticated
-  Stream<User?> authStateChanges();
+  Stream<User?> idTokenChanges();
 
   /// Sign out the current user
   Future<Either<Failure, void>> signOut();

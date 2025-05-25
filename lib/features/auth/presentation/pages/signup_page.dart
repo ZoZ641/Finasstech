@@ -6,7 +6,6 @@ import 'package:finasstech/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../widgets/auth_field.dart';
-import '../widgets/google_apple_sign.dart';
 
 class SignUpPage extends StatefulWidget {
   static route() => MaterialPageRoute(builder: (context) => const SignUpPage());
@@ -74,18 +73,19 @@ class _SignUpPageState extends State<SignUpPage> {
                       children: [
                         const SizedBox(height: 15),
                         AuthField(
-                          hintText: "Work Email",
+                          labelText: "Work Email",
+                          hintText: "james.madison@examplepetstore.com",
                           controller: emailController,
                         ),
                         const SizedBox(height: 15),
                         AuthField(
-                          hintText: "Password",
+                          labelText: "Password",
                           controller: passwordController,
                           isPassword: true,
                         ),
                         const SizedBox(height: 15),
                         AuthField(
-                          hintText: "Confirm Password",
+                          labelText: "Confirm Password",
                           controller: confirmPasswordController,
                           isPassword: true,
                           isConfirmPassword: true,
@@ -132,7 +132,6 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                       ],
                     ),
-                    //GoogleAppleSign(isSignIn: false),
                   ],
                 ),
               );
