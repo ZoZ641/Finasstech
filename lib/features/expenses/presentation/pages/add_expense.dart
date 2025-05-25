@@ -2,7 +2,6 @@ import 'package:finasstech/core/utils/money_formater.dart';
 import 'package:finasstech/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:timezone/timezone.dart';
 import 'package:uuid/uuid.dart';
 import 'package:finasstech/core/services/notification_service.dart';
 
@@ -105,7 +104,9 @@ class _AddExpensePageState extends State<AddExpensePage> {
           _amountController.text.replaceAll(',', '').replaceAll('£', '').trim(),
         ),
         date: _selectedDate!,
-        vendor: _vendorController.text,
+        vendor:
+            _vendorController.text[0] +
+            _vendorController.text.substring(1).toLowerCase().trim(),
         category: _selectedCategory!,
         recurrence: _selectedRecurrence,
       );

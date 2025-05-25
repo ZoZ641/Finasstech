@@ -121,7 +121,7 @@ class _ExpensePageState extends State<ExpensePage> {
     }
 
     // Sort each group from newest to oldest
-    result['thisWeek']!.sort((a, b) => b.date.compareTo(a.date));
+    result['thisWeek']!.sort((a, b) => a.date.compareTo(b.date));
     result['thisMonth']!.sort((a, b) => b.date.compareTo(a.date));
     result['thisYear']!.sort((a, b) => b.date.compareTo(a.date));
     result['later']!.sort((a, b) => b.date.compareTo(a.date));
